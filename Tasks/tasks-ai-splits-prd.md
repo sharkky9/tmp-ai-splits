@@ -1,0 +1,193 @@
+## Relevant Files
+
+- `src/components/Auth/SignUpForm.tsx` - Component for user registration form (using React Hook Form).
+- `src/components/Auth/SignUpForm.test.tsx` - Unit tests for `SignUpForm.tsx`.
+- `src/components/Auth/LoginForm.tsx` - Component for user login form (using React Hook Form).
+- `src/components/Auth/LoginForm.test.tsx` - Unit tests for `LoginForm.tsx`.
+- `src/pages/AuthPage.tsx` - Page hosting sign-up and login forms.
+- `src/lib/supabaseClient.ts` - Supabase client initialization.
+- `src/hooks/useAuth.ts` - Custom hook for managing auth state with Supabase.
+- `src/contexts/AuthContext.tsx` - Context for providing auth state (interfacing with `useAuth`).
+- Supabase: User management via Supabase Auth (replaces `server/routes/authRoutes.ts`, `server/controllers/authController.ts`, `server/models/User.ts`, `server/middleware/authMiddleware.ts`).
+
+- `src/components/Groups/GroupCreateForm.tsx` - Component for creating new groups.
+- `src/components/Groups/GroupCreateForm.test.tsx` - Unit tests for `GroupCreateForm.tsx`.
+- `src/components/Groups/GroupList.tsx` - Component to display a list of the user's groups.
+- `src/components/Groups/GroupListItem.tsx` - Component for a single item in the group list.
+- `src/components/Groups/GroupDetailView.tsx` - Component to display details of a specific group, including members and expenses.
+- `src/components/Groups/AddMemberForm.tsx` - Component to add members to a group.
+- `src/pages/GroupsPage.tsx` - Page for listing and managing groups.
+- `src/pages/GroupDetailPage.tsx` - Page for viewing a specific group's details.
+- Supabase: Group and GroupMember tables in PostgreSQL. Data access via `supabase-js` client and Row Level Security (RLS). (Replaces `src/services/groupService.ts` for direct API calls, `server/routes/groupRoutes.ts`, `server/controllers/groupController.ts`, `server/models/Group.ts`, `server/models/GroupMember.ts`).
+
+- `src/components/Expenses/NLLExpenseInput.tsx` - Component for users to type natural language expense descriptions.
+- `src/components/Expenses/NLLExpenseInput.test.tsx` - Unit tests for `NLLExpenseInput.tsx`.
+- `src/components/Expenses/ExpenseConfirmationCard.tsx` - Component to display the LLM's interpretation of an expense for user review.
+- `src/components/Expenses/ExpenseConfirmationCard.test.tsx` - Unit tests for `ExpenseConfirmationCard.tsx`.
+- `src/components/Expenses/ExpenseEditForm.tsx` - Component for editing interpreted or existing expenses (using React Hook Form).
+- `src/components/Expenses/ExpenseEditForm.test.tsx` - Unit tests for `ExpenseEditForm.tsx`.
+- `src/components/Expenses/ManualExpenseForm.tsx` - Component for manually adding a new expense with a traditional form (using React Hook Form).
+- `src/components/Expenses/ManualExpenseForm.test.tsx` - Unit tests for `ManualExpenseForm.tsx`.
+- `src/components/Expenses/ExpenseList.tsx` - Component to display a list of expenses within a group.
+- `src/components/Expenses/ExpenseListItem.tsx` - Component for a single expense in the list.
+- `src/components/Expenses/ItemizedSplitForm.tsx` - Component to manage itemized splits within an expense.
+- Supabase Edge Function: `parse-expense` - For interacting with OpenAI API, parsing responses, and preparing structured expense data.
+- Supabase: `Expense` table in PostgreSQL. Data access via `supabase-js` client and RLS. (Replaces `src/services/expenseService.ts` for direct API calls, `server/services/llmService.ts`, `server/routes/expenseRoutes.ts`, `server/controllers/expenseController.ts`, `server/models/Expense.ts`).
+
+- `src/components/Settlement/SettlementSummaryView.tsx` - Component to display the simplified list of transactions for settlement.
+- `src/components/Settlement/SettlementSummaryView.test.tsx` - Unit tests for `SettlementSummaryView.tsx`.
+- `src/components/Ledger/GroupLedgerView.tsx` - Component to display the aggregated ledger for a group.
+- Supabase Edge Function: `calculate-settlement` - To calculate net debts and implement the debt simplification algorithm.
+- (Replaces `src/services/settlementService.ts` for direct API calls, `server/services/debtSimplificationService.ts`, `server/services/debtSimplificationService.test.ts`, `server/routes/settlementRoutes.ts`, `server/controllers/settlementController.ts`).
+
+- `src/lib/utils/currencyUtils.ts` - Utility functions for currency formatting and precise calculations (using `decimal.js`).
+- `src/lib/utils/currencyUtils.test.ts` - Unit tests for `currencyUtils.ts`.
+- `src/lib/utils/dateUtils.ts` - Utility functions for date parsing and formatting (using `date-fns`).
+- `src/lib/utils/dateUtils.test.ts` - Unit tests for `dateUtils.ts`.
+- `src/lib/constants/currency.ts` - Constants related to currency, e.g., default currency "USD".
+- `src/config/openaiConfig.ts` (potentially just environment variables for Supabase Edge Functions) - Configuration for OpenAI (API keys).
+- Supabase: Database schema management via Supabase Studio UI or Supabase CLI migrations. (Replaces `prisma/schema.prisma` or `server/db/migrations/`).
+- `tailwind.config.js`, `postcss.config.js` - Configuration for Tailwind CSS.
+- `src/styles/globals.css` - Global styles and Tailwind CSS imports.
+
+### Notes
+
+- Unit tests should typically be placed alongside the code files they are testing.
+- Use `npx jest [optional/path/to/test/file]` or `npm test -- [optional/path/to/test/file]` to run tests.
+- Row Level Security (RLS) policies in Supabase are crucial for data security.
+- Ensure consistent error handling for Supabase client calls and Edge Function responses.
+- Use `decimal.js` for financial calculations to avoid floating-point errors.
+
+## Tasks
+
+- [x] 1.0 Setup Project and Basic User Account Management (Supabase & Next.js)
+  - [x] 1.1 Initialize Next.js project (TypeScript, Tailwind CSS).
+    - [x] 1.1.1 Install Tailwind CSS and configure `tailwind.config.js`, `postcss.config.js`, `globals.css`.
+    - [x] 1.1.2 Integrate Shadcn/ui (or chosen components) for UI elements.
+  - [x] 1.2 Set up Supabase project.
+    - [x] 1.2.1 Create a new project in Supabase.
+    - [x] 1.2.2 Note Supabase Project URL and `anon` key.
+    - [x] 1.2.3 Set up `src/lib/supabaseClient.ts` in Next.js.
+  - [x] 1.3 Set up ESLint, Prettier, and Husky for code quality and consistency.
+  - [x] 1.4 Implement user sign-up functionality (FR1.1) using Supabase Auth:
+    - [x] 1.4.1 Create `SignUpForm.tsx` component (using React Hook Form, Shadcn/ui components).
+    - [x] 1.4.2 Implement sign-up logic using `supabase.auth.signUp()`.
+    - [x] 1.4.3 Define `Users` table in Supabase (profile table linked to `auth.users`, FR1.2 - Name required, Email from `auth.users`).
+  - [x] 1.5 Implement user login functionality (FR1.1) using Supabase Auth:
+    - [x] 1.5.1 Create `LoginForm.tsx` component (using React Hook Form, Shadcn/ui components).
+    - [x] 1.5.2 Implement login logic using `supabase.auth.signInWithPassword()`.
+    - [x] 1.5.3 Implement session management using Supabase client listeners (`onAuthStateChange`).
+  - [x] 1.6 Create basic user profile management (view/update Name) using Supabase.
+    - [x] 1.6.1 Develop UI components for profile display and editing.
+    - [x] 1.6.2 Implement logic to fetch and update user profile data in Supabase `Users` table.
+  - [x] 1.7 Set up basic UI layout (Navbar, Footer, Main content area) using Next.js Layout components and Tailwind CSS.
+  - [x] 1.8 Implement client-side routing using Next.js router.
+  - [x] 1.9 Implement `AuthContext` and `useAuth` hook for managing auth state.
+
+- [x] 2.0 Implement Group Management Functionality (Supabase)
+  - [x] 2.1 Design and create database schema in Supabase for `Group` and `GroupMember` tables (linking users to groups, placeholder names).
+    - [x] 2.1.1 Define columns, relationships, and constraints.
+    - [x] 2.1.2 Implement Row Level Security (RLS) policies for these tables.
+  - [ ] 2.2 Implement "Create New Group" (FR2.1):
+    - [ ] 2.2.1 Create `GroupCreateForm.tsx` component.
+    - [ ] 2.2.2 Implement logic to insert new group data into Supabase using `supabase-js`.
+  - [ ] 2.3 Implement "Add Members to Group" (FR2.2):
+    - [ ] 2.3.1 `AddMemberForm.tsx` component for adding by name (FR2.2.1 - placeholder) or email.
+    - [ ] 2.3.2 Implement logic to add members to Supabase `GroupMember` table.
+    - [ ] 2.3.3 Logic to create placeholder members or link existing users.
+    - [ ] 2.3.4 Functionality to later associate email with placeholders (FR2.2.2).
+  - [ ] 2.4 Implement "View List of Groups" (FR2.3):
+    - [ ] 2.4.1 Create `GroupList.tsx` and `GroupListItem.tsx` components.
+    - [ ] 2.4.2 Implement logic to fetch groups for the logged-in user from Supabase.
+    - [ ] 2.4.3 Utilize React Query/SWR for data fetching and caching.
+  - [ ] 2.5 Implement "View Members of a Specific Group" (FR2.4):
+    - [ ] 2.5.1 Enhance `GroupDetailView.tsx` to list members.
+    - [ ] 2.5.2 Implement logic to fetch group members from Supabase.
+
+- [ ] 3.0 Develop LLM-Powered Expense Logging (Supabase Edge Functions & OpenAI)
+  - [ ] 3.1 Design and create `Expense` database schema in Supabase (FR3.5):
+    - [ ] 3.1.1 Include `expense_id`, `group_id`, `description`, `original_input_text`, `total_amount` (numeric/decimal), `currency` ("USD" default - FR7.1), `date_of_expense`.
+    - [ ] 3.1.2 `payers`: JSONB array of `{ member_id, amount_paid (numeric/decimal) }`.
+    - [ ] 3.1.3 `participants`: JSONB array of `{ member_id, share_type, share_value, calculated_owed_amount (numeric/decimal) }`.
+    - [ ] 3.1.4 `items` (optional JSONB): List of `{ item_description, item_amount (numeric/decimal), item_participants }`.
+    - [ ] 3.1.5 `llm_assumptions`: Array of strings.
+    - [ ] 3.1.6 `status`: Enum-like text field ('pending_confirmation', 'confirmed').
+    - [ ] 3.1.7 Implement Row Level Security (RLS) policies for `Expense` table.
+  - [ ] 3.2 Set up OpenAI API integration.
+    - [ ] 3.2.1 Securely store OpenAI API Key as an environment variable in Supabase project settings.
+  - [ ] 3.3 Develop Supabase Edge Function (`parse-expense`) for LLM processing (FR3.2):
+    - [ ] 3.3.1 Function takes natural language input.
+    - [ ] 3.3.2 Uses `openai` library to call OpenAI API (GPT model) with engineered prompt.
+    - [ ] 3.3.3 Parses LLM response to extract structured expense details (description, amount, payers, participants, date, splits, itemization - FR3.2.1-FR3.2.7).
+    - [ ] 3.3.4 Handles identifying/creating placeholder members (FR3.3).
+    - [ ] 3.3.5 Returns structured expense data or clarifying questions (FR3.4).
+  - [ ] 3.4 Create `NLLExpenseInput.tsx` component for user text input.
+    - [ ] 3.4.1 Calls the `parse-expense` Edge Function.
+    - [ ] 3.4.2 Handles loading states and displays LLM response/clarification prompts.
+
+- [ ] 4.0 Create Expense Confirmation and Adjustment Interface
+  - [ ] 4.1 Develop `ExpenseConfirmationCard.tsx` to display LLM-interpreted details (FR4.1).
+    - [ ] 4.1.1 Show description, amount, payer(s), participants, split method, LLM assumptions (FR4.1.1).
+    - [ ] 4.1.2 Clearly display itemized breakdowns if applicable (FR4.1.2).
+  - [ ] 4.2 Implement "Confirm Expense" functionality (FR4.2):
+    - [ ] 4.2.1 Button to change expense status to 'confirmed' and save to Supabase `Expense` table.
+  - [ ] 4.3 Implement "Edit Interpreted Expense" (FR4.3) using `ExpenseEditForm.tsx`:
+    - [ ] 4.3.1 Allow editing of all fields.
+    - [ ] 4.3.2 Implement `ItemizedSplitForm.tsx` for managing item details.
+    - [ ] 4.3.3 Logic to update expense data in Supabase.
+  - [ ] 4.4 Implement mapping placeholder members to actual group members or add email (FR4.4).
+  - [ ] 4.5 Implement "Discard Interpreted Expense" functionality (FR4.5).
+    - [ ] 4.5.1 Logic to delete the 'pending_confirmation' expense from Supabase.
+  - [ ] 4.6 Integrate confirmation/adjustment flow after LLM input.
+
+- [ ] 5.0 Implement Manual Expense Management
+  - [ ] 5.1 Develop `ManualExpenseForm.tsx` for adding new expenses (FR5.1), reusing `ExpenseEditForm.tsx` or similar components.
+    - [ ] 5.1.1 Allow specification of all details from FR3.5.
+    - [ ] 5.1.2 Logic to insert manual expense data into Supabase.
+  - [ ] 5.2 Implement "View List of Expenses" within a group (FR5.2):
+    - [ ] 5.2.1 Create `ExpenseList.tsx` and `ExpenseListItem.tsx`.
+    - [ ] 5.2.2 Logic to fetch expenses for a group from Supabase.
+    - [ ] 5.2.3 Utilize React Query/SWR for data fetching and caching.
+  - [ ] 5.3 Implement "Edit Existing Confirmed Expense" (FR5.3):
+    - [ ] 5.3.1 Use `ExpenseEditForm.tsx`.
+    - [ ] 5.3.2 Logic to update confirmed expenses in Supabase.
+  - [ ] 5.4 Implement "Delete Expense" (FR5.4):
+    - [ ] 5.4.1 Add delete buttons to expense items/views.
+    - [ ] 5.4.2 Logic to delete confirmed expenses from Supabase.
+
+- [ ] 6.0 Develop Expense Ledger and Settlement Calculation
+  - [ ] 6.1 Implement "Aggregated Ledger Display" (FR6.1):
+    - [ ] 6.1.1 Develop `GroupLedgerView.tsx` component.
+    - [ ] 6.1.2 Logic to fetch and display all confirmed expenses and their splits from Supabase.
+  - [ ] 6.2 Develop Supabase Edge Function (`calculate-settlement`) for debt simplification (FR6.2, FR6.3, TC4).
+    - [ ] 6.2.1 Function fetches relevant expense data for a group.
+    - [ ] 6.2.2 Implements net amount calculation.
+    - [ ] 6.2.3 Implements debt simplification algorithm.
+    - [ ] 6.2.4 Returns a simplified list of transactions.
+    - [ ] 6.2.5 Write unit tests for the algorithm locally.
+  - [ ] 6.3 Implement "Display Simplified Settlement" (FR6.3):
+    - [ ] 6.3.1 Develop `SettlementSummaryView.tsx` component.
+    - [ ] 6.3.2 Calls the `calculate-settlement` Edge Function and displays results.
+  - [ ] 6.4 Ensure USD is default and displayed (FR7.1); use `currencyUtils.ts` (using `decimal.js`).
+  - [ ] 6.5 (Conceptual) "Settle Up" state (FR6.4): Clear presentation of "who owes whom."
+  - [ ] 6.6 Ensure all financial calculations use appropriate numeric/decimal types in Supabase and `decimal.js` in frontend/Edge Functions (TC3).
+
+- [ ] 7.0 Deployment & Finalization
+  - [ ] 7.1 Set up Vercel project.
+    - [ ] 7.1.1 Connect Git repository to Vercel.
+    - [ ] 7.1.2 Configure build settings for Next.js.
+  - [ ] 7.2 Configure Environment Variables:
+    - [ ] 7.2.1 In Vercel: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+    - [ ] 7.2.2 In Supabase (for Edge Functions): `OPENAI_API_KEY`, any other required secrets.
+  - [ ] 7.3 Deploy Supabase Database Schema and Edge Functions.
+    - [ ] 7.3.1 Finalize and apply all database migrations/schema changes.
+    - [ ] 7.3.2 Deploy all Edge Functions (`parse-expense`, `calculate-settlement`).
+    - [ ] 7.3.3 Thoroughly test Row Level Security policies.
+  - [ ] 7.4 Deploy Next.js Frontend to Vercel.
+    - [ ] 7.4.1 Trigger a production build and deployment.
+    - [ ] 7.4.2 Test the deployed application thoroughly on Vercel's generated URL.
+  - [ ] 7.5 Final Testing and Feedback Iteration.
+    - [ ] 7.5.1 Conduct end-to-end testing of all user stories on the deployed prototype.
+    - [ ] 7.5.2 Gather feedback from initial testers.
+  - [ ] 7.6 Create a `README.md` for the project.
+    - [ ] 7.6.1 Include setup instructions, tech stack overview, and deployment notes. 
