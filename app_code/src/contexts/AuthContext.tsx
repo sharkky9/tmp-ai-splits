@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react'
-import { Session, User, Subscription } from '@supabase/supabase-js'
+import { Session, User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabaseClient'
 
 interface AuthContextType {
@@ -31,14 +31,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setIsLoading(false)
     })
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, newSession) => {
-        setSession(newSession)
-        setUser(newSession?.user ?? null)
-        // Note: isLoading might be set to false here too, or after initial getSession only
-        // For simplicity, initial load handles isLoading, subsequent changes update session/user.
-      }
-    )
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession)
+      setUser(newSession?.user ?? null)
+      // Note: isLoading might be set to false here too, or after initial getSession only
+      // For simplicity, initial load handles isLoading, subsequent changes update session/user.
+    })
 
     return () => {
       subscription?.unsubscribe()
@@ -66,4 +66,4 @@ export function useAuthContext() {
     throw new Error('useAuthContext must be used within an AuthProvider')
   }
   return context
-} 
+}

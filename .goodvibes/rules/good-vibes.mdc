@@ -1,0 +1,114 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+<!--
+<vibeSpec>
+    <purpose> This file acts as a central reference, previously holding detailed definitions but now primarily pointing to the specification details embedded within each respective .mdc file's header. It can be used by humans or AI needing an index or overview reminder of the document types within the Vibe Coding framework.</purpose>
+    <scope>Contains comprehensive descriptions including Purpose, What Belongs, What Does Not Belong, and Creation/Update guidelines for each Vibe Coding artifact.</scope>
+    <nonScope>Does not contain the actual project-specific content (that lives in the respective files like `architecture.mdc`). Does not define the high-level workflow (that's in README.md).</nonScope>
+    <usageNotes>This document itself is primarily for human reference and potentially for bootstrapping AI understanding of the framework. It is manually maintained. The definitions within *used* to be here, but have been moved into XML comments within each respective document file for self-containment.</usageNotes>
+</vibeSpec>
+-->
+
+# Good Vibes Workflow & Standards
+
+## 1. Overview
+
+This document outlines the coding standards, practices, and workflow for the AI Splits project. The goal is to maintain a high-quality, consistent, and maintainable codebase.
+
+## 2. Version Control (Git)
+
+*   **Branching Strategy:**
+    *   `main`: Production-ready code. Directly committing to `main` is prohibited.
+    *   `develop`: Integration branch for features. All feature branches are merged into `develop`.
+    *   `feature/<feature-name>`: For new features or significant changes (e.g., `feature/llm-itemization`). Create from `develop`.
+    *   `fix/<issue-description>`: For bug fixes. Create from `develop` or `main` (for hotfixes).
+    *   `chore/<task-description>`: For refactoring, tooling updates, etc.
+*   **Commits:**
+    *   Write clear, concise commit messages using conventional commit format (e.g., `feat: add user login form`, `fix: resolve expense calculation error`).
+    *   Commit frequently with small, logical changes.
+*   **Pull Requests (PRs):**
+    *   All code changes must go through a PR to `develop` (or `main` for hotfixes).
+    *   PRs should clearly describe the changes made and reference any relevant issues or tasks.
+    *   At least one code review approval is required before merging (if team size allows).
+    *   Ensure all automated checks (linting, tests) pass before merging.
+
+## 3. Coding Standards
+
+*   **Language:** TypeScript. Strive for strong typing and leverage TypeScript features to improve code quality.
+*   **Style Guide:**
+    *   **Formatting:** Prettier is enforced via pre-commit hooks. Run `pnpm format` before committing.
+    *   **Linting:** ESLint (with `eslint-config-next` and `eslint-config-prettier`) is enforced. Run `pnpm lint` to check for issues.
+*   **Naming Conventions:**
+    *   Components: PascalCase (e.g., `SignUpForm.tsx`).
+    *   Functions/Variables: camelCase (e.g., `calculateTotalAmount`).
+    *   Interfaces/Types: PascalCase (e.g., `type ExpenseItem = { ... }`).
+    *   Constants: UPPER_SNAKE_CASE (e.g., `DEFAULT_CURRENCY`).
+    *   Files: kebab-case or PascalCase for components (e.g., `currency-utils.ts`, `AuthPage.tsx`).
+*   **Comments:**
+    *   Write comments for complex logic, non-obvious code, or to explain "why" something is done a certain way.
+    *   Avoid commenting on obvious code.
+    *   Use JSDoc for function/module descriptions where appropriate.
+*   **Error Handling:**
+    *   Implement robust error handling for API calls, Supabase interactions, and Edge Functions.
+    *   Provide user-friendly error messages on the frontend.
+*   **Modularity:**
+    *   Break down complex components and functions into smaller, reusable pieces.
+    *   Follow the Single Responsibility Principle.
+*   **Environment Variables:**
+    *   Store all sensitive keys and environment-specific configurations in environment variables (e.g., `.env.local`, Supabase project settings, Vercel environment variables).
+    *   Prefix frontend-accessible variables with `NEXT_PUBLIC_`.
+
+## 4. Frontend Specifics (Next.js/React)
+
+*   **Component Structure:** Organize components logically within the `src/components` directory, potentially by feature (e.g., `src/components/Auth`, `src/components/Expenses`).
+*   **Hooks:** Utilize custom hooks (`src/hooks`) to encapsulate reusable logic and stateful behavior.
+*   **Context:** Use React Context (`src/contexts`) for global state management sparingly (e.g., authentication state). Prefer prop drilling for localized state or consider server state tools like React Query/SWR.
+*   **Data Fetching:** Plan to use React Query or SWR for efficient data fetching, caching, and synchronization with the backend.
+*   **Accessibility (A11y):** Prioritize accessibility in component design and implementation.
+*   **Performance:** Be mindful of bundle sizes, render performance, and efficient data handling.
+
+## 5. Backend Specifics (Supabase)
+
+*   **Edge Functions:**
+    *   Write Edge Functions in TypeScript.
+    *   Keep functions focused and lean.
+    *   Handle request validation and error responses appropriately.
+    *   Securely manage API keys (e.g., OpenAI key) using Supabase environment variables.
+*   **Database (PostgreSQL):**
+    *   Define clear schemas and use appropriate data types (e.g., `numeric` or `decimal` for currency via `decimal.js` if calculations happen in JS, or PostgreSQL's `NUMERIC` type for direct DB operations).
+    *   Implement Row Level Security (RLS) policies rigorously to protect data.
+    *   Write efficient SQL queries.
+*   **Migrations:** Use Supabase CLI or Studio UI for managing database schema changes.
+
+## 6. Testing
+
+*   **Unit Tests:** Write unit tests for utility functions, complex logic within components, and Edge Functions. Place test files alongside the code they test (e.g., `component.test.tsx`). (Jest is the planned framework).
+*   **Integration Tests:** Test interactions between components or between frontend and backend services.
+*   **End-to-End (E2E) Tests:** (Future) Consider tools like Playwright or Cypress for testing user flows.
+*   **Test Coverage:** Aim for reasonable test coverage, focusing on critical paths and complex logic.
+
+## 7. Documentation
+
+*   **PRD (`ai-splits-prd.md`):** Maintained to reflect project requirements.
+*   **Task List (`tasks-ai-splits-prd.md`):** Updated to track progress.
+*   **Code Comments:** As described above.
+*   **README.md:** Keep the main project `README.md` updated with setup instructions, tech stack overview, and deployment notes.
+*   **`.goodvibes/rules/*.mdc`:** These documents (architecture, design, tech-stack, good-vibes) should be kept up-to-date as the project evolves.
+
+## 8. Code Reviews
+
+*   Focus on constructive feedback.
+*   Check for adherence to coding standards, potential bugs, logic errors, and architectural consistency.
+*   Ensure changes align with project requirements and design guidelines.
+
+## 9. Dependencies
+
+*   Review new dependencies carefully before adding them to the project.
+*   Keep dependencies up-to-date to leverage new features and security patches.
+
+---
+*This workflow guide was inspired by the concepts presented in the "Ultimate Guide to Vibe Coding" by Nicolas Zullo (@https://github.com/EnzeD/good-vibes). Styles guides cam from awesome-cursorrules by PatrickJS and other contributors. Thanks for your work!!*
+prompt-5prompt-5prompt-5prompt-5

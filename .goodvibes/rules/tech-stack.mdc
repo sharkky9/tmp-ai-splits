@@ -1,0 +1,221 @@
+---
+description: This document explicitly lists all approved technologies, libraries, tools, and their versions for the project. The AI requests this file to confirm allowed dependencies and platform specifics before adding libraries or writing environment-specific code.
+globs: 
+alwaysApply: false
+---
+<!--
+<vibeSpec>
+    <purpose>This document explicitly lists all approved technologies, libraries, tools, and their versions for the project. The AI requests this file to confirm allowed dependencies and platform specifics before adding libraries or writing environment-specific code.</purpose>
+    <scope>
+        *   Programming Languages & Versions: (e.g., Python 3.11+, Node.js 18.x).
+        *   Frameworks & Major Libraries: (e.g., React 18.x, FastAPI 0.100+, Pandas 2.x). Specify versions if critical.
+        *   Databases & Caching: (e.g., PostgreSQL 15, Redis 7).
+        *   APIs (External): List of critical third-party APIs integrated with.
+        *   Build Tools, Package Managers, Linters, Formatters: (e.g., Vite, npm, pip, Ruff, Prettier).
+        *   Testing Frameworks & Tools: (e.g., Pytest, Jest, Playwright).
+        *   Deployment Environment / Cloud Services: Key details (e.g., Docker, Target OS, AWS S3/EC2).
+        *   Critical Constraints: Non-functional requirements impacting technology (e.g., "Real-time data processing required").
+    </scope>
+    <nonScope>
+        *   Application architecture or data flow diagrams (`architecture.mdc`).
+        *   UI design specifications (`design.mdc`).
+        *   Detailed coding standards (specific style guides or `rules.mdc`).
+        *   Business logic descriptions.
+    </nonScope>
+    <usageNotes>Initial draft generated via `prompt-0-context-setup.md`. Requires careful human review and adjustment based on team expertise/project needs. Can be updated via `prompt-5-update-context-doc.md`. AI Agents should request this document to confirm allowed libraries, versions, or tools before adding dependencies or writing platform-specific code.</usageNotes>
+</vibeSpec>
+-->
+
+# Tech Stack
+
+## 1. Frontend
+
+*   **Framework:** Next.js (v15.x) with App Router
+*   **Language:** TypeScript (v5.x)
+*   **UI Library:** React (v19.x)
+*   **Component Toolkit:** Shadcn/ui
+*   **Styling:** Tailwind CSS (v4.x)
+    *   `clsx`, `tailwind-merge` for utility class management
+*   **Forms:** React Hook Form (v7.x) with Zod (v3.x) for validation
+*   **State Management:**
+    *   React Context API (e.g., `AuthContext`)
+    *   **React Query (v5.x)** for server state management and caching ✅ **INSTALLED & CONFIGURED**
+*   **Routing:** Next.js App Router
+*   **HTTP Client:** Supabase-js client for interactions with Supabase services
+*   **Financial Calculations:** **decimal.js (v10.x)** for precise currency arithmetic (avoiding floating-point errors) ✅ **INSTALLED & CONFIGURED**
+*   **Date Handling:** **date-fns (v3.x)** for date manipulation and formatting ✅ **INSTALLED & CONFIGURED**
+*   **Icons:** `lucide-react` for consistent iconography
+*   **Linting & Formatting:** ESLint, Prettier
+*   **Analytics & Monitoring:**
+    *   **Vercel Analytics** for performance monitoring
+    *   Custom analytics hooks for success metrics tracking
+
+## 2. Backend
+
+*   **Platform:** Supabase Cloud
+    *   **Database:** PostgreSQL (v15.x)
+    *   **Authentication:** Supabase Auth
+    *   **Serverless Functions:** Supabase Edge Functions (Deno runtime, TypeScript)
+    *   **Real-time:** Supabase Realtime (for live group updates)
+*   **LLM Service:** OpenAI API
+    *   **Primary Model:** GPT-4 (gpt-4-turbo-preview for cost optimization)
+    *   **Fallback Model:** GPT-3.5-turbo (for high-volume or fallback scenarios)
+    *   **Integration:** `openai` library (v4.x) within Supabase Edge Functions
+    *   **Cost Management:** Rate limiting, request batching, response caching
+
+## 3. Development & Operations (DevOps)
+
+*   **Package Manager:** pnpm (v8.x)
+*   **Version Control:** Git (hosted on GitHub)
+*   **Deployment:**
+    *   **Frontend:** Vercel (with preview deployments for PRs)
+    *   **Backend:** Supabase Cloud (production/staging environments)
+*   **Environment Management:**
+    *   `.env.local` for local development
+    *   Vercel environment variables for frontend
+    *   Supabase project settings for Edge Function secrets
+*   **Code Quality:**
+    *   ESLint for linting (with Next.js and Prettier configs)
+    *   Prettier for code formatting
+    *   Husky for pre-commit hooks (linting, formatting, type checking)
+*   **Testing:**
+    *   **Jest** for unit/integration tests (`*.test.tsx` files)
+    *   **React Testing Library** for component testing
+    *   **Playwright** for E2E testing (planned for critical user flows)
+
+## 4. Key Libraries & Dependencies (from `package.json`)
+
+### Production Dependencies
+*   **Core Framework:** `next`, `react`, `react-dom`
+*   **Supabase Integration:** 
+    *   `@supabase/auth-helpers-nextjs`
+    *   `@supabase/ssr`
+    *   `@supabase/supabase-js`
+*   **UI & Styling:** 
+    *   `@radix-ui/*` (dependencies of Shadcn/ui)
+    *   `class-variance-authority`
+    *   `clsx`
+    *   `lucide-react`
+    *   `tailwind-merge`
+    *   `tailwindcss`
+*   **Forms & Validation:** 
+    *   `@hookform/resolvers`
+    *   `react-hook-form`
+    *   `zod`
+*   **Data Management:**
+    *   `@tanstack/react-query` (React Query v5) ✅ **v5.79.0 INSTALLED**
+    *   `decimal.js` (financial calculations) ✅ **v10.5.0 INSTALLED**
+    *   `date-fns` (date utilities) ✅ **v3.6.0 INSTALLED**
+
+### Development Dependencies
+*   **TypeScript:** `@types/*`, `typescript`
+*   **Linting/Formatting:** `eslint`, `eslint-config-next`, `prettier`
+*   **Git Hooks:** `husky`
+*   **Testing:** `jest`, `@testing-library/react`, `@testing-library/jest-dom`
+
+## 5. External APIs & Services
+
+*   **OpenAI API:**
+    *   **Models:** GPT-4o (primary for expense parsing), GPT-3.5-turbo (fallback)
+    *   **Usage:** Natural language expense parsing and interpretation via Supabase Edge Functions
+    *   **Integration:** `openai` library (v4.20.1) within Supabase Edge Functions (Deno runtime)
+    *   **Rate Limits:** 10,000 TPM (tokens per minute) for GPT-4o
+    *   **Cost Management:** 10-second timeout, structured JSON responses, prompt optimization
+    *   **Response Format:** Structured JSON with confidence scoring and assumption tracking
+    *   **Error Handling:** Comprehensive validation, graceful degradation, clarifying questions
+    *   **Deployment:** Successfully deployed as parse-expense Edge Function (87.19kB bundle)
+*   **Supabase API:**
+    *   **Database:** PostgreSQL operations via supabase-js
+    *   **Auth:** User management and authentication
+    *   **Edge Functions:** Custom business logic execution (Deno runtime, TypeScript)
+        *   `parse-expense`: OpenAI integration for natural language expense parsing
+        *   Environment variables: OPENAI_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+    *   **Storage:** Future file upload support (receipts)
+
+## 6. Data Storage & Management
+
+*   **Primary Database:** Supabase PostgreSQL
+    *   **Tables:** Users, Groups, GroupMembers, Expenses, AnalyticsEvents
+    *   **Data Types:** JSONB for flexible expense data, NUMERIC for precise currency
+    *   **Security:** Row Level Security (RLS) policies for data protection
+*   **Authentication Data:** Supabase Auth (managed service)
+*   **Session Management:** Supabase client-side session handling
+*   **File Storage:** Supabase Storage (for future receipt uploads)
+
+## 7. Analytics & Monitoring
+
+*   **Performance Monitoring:**
+    *   Vercel Analytics (Core Web Vitals, page performance)
+    *   Supabase built-in monitoring (database performance)
+*   **Success Metrics Tracking:**
+    *   Custom analytics events (expense logging, corrections, settlements)
+    *   LLM performance metrics (correction rates, processing times)
+    *   User satisfaction tracking (planned feedback collection)
+*   **Error Tracking:**
+    *   Vercel deployment monitoring
+    *   Custom error boundaries in React
+    *   Supabase Edge Function error logging
+
+## 8. Security & Compliance
+
+*   **Authentication:** Supabase Auth (email/password, social login ready)
+*   **Authorization:** Row Level Security (RLS) policies in PostgreSQL
+*   **API Security:**
+    *   Environment variables for sensitive keys
+    *   CORS configuration for frontend/backend communication
+*   **Data Protection:**
+    *   Financial data encryption at rest (PostgreSQL default)
+    *   HTTPS everywhere (Vercel/Supabase default)
+*   **Privacy:** No PII storage beyond necessary user profile data
+
+## 9. Performance & Scalability Constraints
+
+*   **LLM Integration:**
+    *   10-second timeout for OpenAI API calls
+    *   Exponential backoff retry logic
+    *   Graceful degradation to manual entry
+*   **Database:**
+    *   Connection pooling via Supabase (automatic)
+    *   Query optimization for expense aggregation
+    *   Indexing on foreign keys and frequently queried fields
+*   **Frontend:**
+    *   Code splitting for component bundles
+    *   React Query caching for API responses
+    *   Optimized images and assets via Vercel
+
+## 10. Development Environment Requirements
+
+*   **Node.js:** v18.x LTS minimum
+*   **Package Manager:** pnpm (enforced via .nvmrc and package.json)
+*   **Editor Support:** 
+    *   TypeScript language server
+    *   ESLint and Prettier extensions
+    *   Tailwind CSS IntelliSense
+*   **Local Development:**
+    *   Supabase CLI for local database/Edge Function development
+    *   Environment variables setup (.env.local template)
+
+## 11. Cost Optimization Strategies
+
+*   **OpenAI API:**
+    *   GPT-3.5-turbo fallback for simple expenses
+    *   Response caching for similar inputs
+    *   Prompt engineering for token efficiency
+*   **Supabase:**
+    *   Efficient query patterns to minimize database reads
+    *   Edge Function optimization for fast cold starts
+*   **Vercel:**
+    *   Static generation where possible
+    *   Optimized bundle sizes through tree shaking
+
+## 12. Future Technology Considerations
+
+*   **Planned Additions:**
+    *   Playwright for comprehensive E2E testing
+    *   Receipt OCR integration (Google Vision API or AWS Textract)
+    *   PWA capabilities for mobile-first experience
+    *   WebSockets for real-time group expense updates
+*   **Scaling Options:**
+    *   Supabase read replicas for analytics queries
+    *   CDN optimization for global user base
+    *   Edge Function geographic distribution 

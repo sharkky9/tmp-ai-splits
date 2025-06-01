@@ -28,9 +28,12 @@ export default function LoginPage() {
       // On successful login, Supabase client updates session.
       // Redirect to a protected page or dashboard.
       router.push('/') // Or any other appropriate page like '/dashboard'
-
-    } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred.')
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message)
+      } else {
+        setError('An unexpected error occurred during login.')
+      }
     } finally {
       setIsLoading(false)
     }
@@ -44,13 +47,13 @@ export default function LoginPage() {
         {error && <p className='mt-4 text-sm text-center text-red-600'>{error}</p>}
         {/* TODO: Add link to sign-up page and password reset */}
         <p className='mt-4 text-sm text-center'>
-          Don\'t have an account?{' '}
+          Don&apos;t have an account?{' '}
           {/* <Link href='/signup' className='font-medium text-indigo-600 hover:text-indigo-500'>
             Sign up
           </Link> */}
-           {/* Placeholder for signup link */}
+          {/* Placeholder for signup link */}
         </p>
       </div>
     </div>
   )
-} 
+}

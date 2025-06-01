@@ -9,7 +9,6 @@ import { Input } from '@/components/ui/input'
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -92,4 +91,4 @@ export function SignUpForm({ onSubmit, isLoading }: SignUpFormProps) {
       </form>
     </Form>
   )
-} 
+}

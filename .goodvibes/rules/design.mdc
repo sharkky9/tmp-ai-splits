@@ -1,0 +1,303 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+<!--
+<vibeSpec>
+    <purpose>This file defines the target user experience (UX) and user interface (UI), including user stories, user flows, and key interactions. AI agents request this document when implementing or modifying user-facing features to ensure alignment with the intended design and user needs.</purpose>
+    <scope>
+        *   User Stories & Goals: Clear descriptions of what users want to accomplish and why, connecting features to user needs.
+        *   Success Metrics: Measurable criteria that indicate the design is meeting user needs effectively.
+        *   User Flows & Journeys: Detailed descriptions of user navigation for specific goals (e.g., "User Registration Flow," "Product Purchase Journey").
+        *   UI Layout & Structure: Descriptions or textual wireframes of screens/pages/components, including element placement and navigation patterns.
+        *   Key Interactions: Specifics of UI element interactions (e.g., button clicks, drag-and-drop results).
+        *   Visual Elements (Descriptive): Descriptions of styling, branding, and overall aesthetic (unless a separate style guide covers this). Example: "Buttons should have rounded corners and a primary blue background."
+        *   Accessibility Considerations: Notes on supporting users with disabilities (e.g., alt text requirements, keyboard navigation support).
+        *   Design Boundaries: Clear statements about what is intentionally out of scope for the design.
+        *   Open Design Questions: Documentation of unresolved design issues that need further investigation.
+    </scope>
+    <nonScope>
+        *   Code implementation details (e.g., specific HTML tags or CSS classes).
+        *   Specific front-end framework/library choices (these belong in `tech-stack.mdc`).
+        *   Database schema or backend API endpoint definitions (these belong in `architecture.mdc`).
+    </nonScope>
+    <usageNotes>Initial draft generated via `prompt-0-context-setup.md` based on project idea/requirements. Requires thorough human review and refinement before coding. Can be updated via `prompt-5-update-context-doc.md` if UX/UI requirements change significantly. AI Agents should request this when needing to understand user-facing aspects or implement UI changes.</usageNotes>
+</vibeSpec>
+-->
+
+# Design Guidelines
+
+## 1. Target User Experience
+
+The primary goal is to provide a **simple, intuitive, and fast** way for users to log and settle group expenses. The design should minimize friction and cognitive load, especially for users who may not be tech-savvy. Transparency regarding LLM actions is key, with clear fallback options when automation fails.
+
+## 2. User Stories & Goals
+
+### Core User Stories (from PRD)
+*   **US1**: Trip organizer logging expenses with participant specification
+*   **US2**: Automatic placeholder member creation for mentioned names
+*   **US3**: Review and confirm LLM interpretations with visible assumptions
+*   **US4**: Simple, non-technical interface for expense confirmation/adjustment
+*   **US5**: Multiple group management (e.g., "Apartment Bills", "Weekend Trip")
+*   **US6**: Email-based member invitations and association
+*   **US7**: Clear settlement summary with minimal transaction count
+*   **US8**: Clarifying questions for ambiguous input instead of guessing
+*   **US9**: Multiple payers for single expense support
+*   **US10**: Itemized expenses with per-item splits
+*   **US11**: Manual editing/deletion and traditional form-based entry
+*   **US12**: USD default currency assumption
+
+### Success Metrics
+*   LLM correction rate < 20% (target from PRD)
+*   Average expense logging time < 30 seconds
+*   Settlement completion rate > 80%
+*   User satisfaction rating > 4.5/5 for LLM feature
+
+## 3. Key User Flows & UI Considerations
+
+### 3.1. Expense Logging via LLM
+
+#### 3.1.1. Simple Single Expense Flow
+*   **Input Screen:**
+    *   Prominent text area with placeholder: "Describe your expense (e.g., 'I paid $25 for lunch for me and Alice')"
+    *   Group context indicator showing current group and members
+    *   Submit button becomes active as user types
+*   **Processing State:**
+    *   Loading indicator with text "Understanding your expense..."
+    *   Estimated processing time (3-5 seconds)
+*   **Confirmation Screen (`ExpenseConfirmationCard.tsx`):**
+    *   **Header:** Original input text in a distinct box
+    *   **Parsed Details Section:**
+        *   Description field (editable)
+        *   Amount with currency symbol (editable)
+        *   Date picker (defaults to today if not specified)
+        *   Payer(s) with amounts (editable list)
+        *   Participants with split details (editable)
+    *   **LLM Assumptions Box:** 
+        *   Light background, icon indicating AI interpretation
+        *   Bullet points of assumptions made
+        *   "Does this look right?" prompt
+    *   **Action Buttons:**
+        *   Primary: "Confirm & Save"
+        *   Secondary: "Edit Details"
+        *   Tertiary: "Start Over"
+
+#### 3.1.2. Multiple Payers Flow (US9)
+*   **Input Example:** "Sarah paid $50 and I paid $30 for the $80 concert tickets for both of us and Tom"
+*   **Confirmation Display:**
+    *   **Multiple Payers Section:**
+        *   Sarah: $50.00
+        *   [Current User]: $30.00
+        *   Total Paid: $80.00 ✓
+    *   **Participants & Splits:**
+        *   Visual breakdown showing Tom's share split between Sarah and current user
+        *   Clear calculation: Tom owes $26.67 (split proportionally by payment amounts)
+
+#### 3.1.3. Itemized Expenses Flow (US10)
+*   **Input Example:** "Groceries $100 paid by me. Apples $10 for me and Eve. Milk $5 for Adam. Rest split evenly among me, Eve, Adam"
+*   **Confirmation Display:**
+    *   **Itemized Breakdown Section:**
+        *   Item 1: Apples - $10.00 (Me: $5.00, Eve: $5.00)
+        *   Item 2: Milk - $5.00 (Adam: $5.00)
+        *   Item 3: Remaining groceries - $85.00 (Me: $28.33, Eve: $28.33, Adam: $28.34)
+    *   **Summary:**
+        *   Total: $100.00
+        *   Paid by: Me ($100.00)
+        *   Net amounts for each participant
+    *   **Edit Options:** Add/remove items, adjust splits per item
+
+#### 3.1.4. Clarifying Questions Flow (US8)
+*   **Trigger:** LLM uncertainty (e.g., "Groceries for some of us")
+*   **Clarification Dialog (`ClarifyingQuestionDialog.tsx`):**
+    *   **Header:** "I need clarification"
+    *   **Original Input:** Displayed prominently
+    *   **Question:** Clear, specific question from LLM
+    *   **Response Options:**
+        *   Text input for specific answers
+        *   Multiple choice buttons for common scenarios
+        *   "Use manual entry instead" option
+*   **After Response:** Return to normal confirmation flow with refined interpretation
+
+#### 3.1.5. LLM Failure/Fallback Flow
+*   **Error States:**
+    *   API timeout: "Taking longer than expected - would you like to try manual entry?"
+    *   Parse failure: "I couldn't understand that expense - let's use the manual form"
+    *   Confidence too low: "I'm not confident about this interpretation"
+*   **Fallback Action:** Smooth transition to `ManualExpenseForm.tsx` with input text preserved
+
+### 3.2. Manual Expense Entry (US11)
+
+#### 3.2.1. Manual Form (`ManualExpenseForm.tsx`)
+*   **Access Points:**
+    *   LLM fallback
+    *   "Add Expense Manually" button on group page
+    *   Edit mode from confirmed expenses
+*   **Form Sections:**
+    *   **Basic Details:**
+        *   Description (required)
+        *   Total amount (required, with currency symbol)
+        *   Date picker (defaults to today)
+    *   **Payers Section:**
+        *   Add/remove payers
+        *   Amount paid by each (must sum to total)
+    *   **Participants & Splits:**
+        *   Participant selection (group members + add new)
+        *   Split method: Even, Exact amounts, Percentages, Shares
+        *   Real-time calculation display
+    *   **Itemization (Optional):**
+        *   Toggle to enable itemized mode
+        *   Add/remove items with individual splits
+*   **Validation & Feedback:**
+    *   Real-time validation with clear error messages
+    *   Running total calculations
+    *   Split verification (must equal total amount)
+
+### 3.3. Group Management
+
+#### 3.3.1. Group Creation (`GroupCreateForm.tsx`)
+*   **Simple Form:**
+    *   Group name input (required)
+    *   Optional description
+    *   Create button
+*   **Immediate Navigation:** After creation, redirect to group detail with member addition prompt
+
+#### 3.3.2. Member Management (`AddMemberForm.tsx`)
+*   **Adding Members:**
+    *   **Option 1:** Enter name for placeholder member
+    *   **Option 2:** Enter email to invite existing user or send invitation
+    *   Clear visual distinction between placeholder and invited members
+*   **Member List Display:**
+    *   **Confirmed Members:** Green indicator, profile info
+    *   **Placeholder Members:** Yellow indicator, "Add email" action
+    *   **Invited Members:** Blue indicator, "Pending" status
+*   **Email Association (US6):**
+    *   For placeholder members: "Associate with email" action
+    *   Sends invitation and links to existing placeholder expenses
+
+#### 3.3.3. Group Detail View (`GroupDetailView.tsx`)
+*   **Header Section:**
+    *   Group name and member count
+    *   "Add Member" and "Add Expense" quick actions
+*   **Navigation Tabs:**
+    *   Expenses (default)
+    *   Settlement Summary
+    *   Members
+*   **Key Actions:** Accessible from all tabs
+
+### 3.4. Settlement & Finalization
+
+#### 3.4.1. Ledger View (`GroupLedgerView.tsx`)
+*   **Expense List:**
+    *   Chronological order (most recent first)
+    *   Each expense shows: description, amount, payer(s), date
+    *   Expandable details for participants and splits
+    *   Edit/delete actions for each expense
+*   **Summary Statistics:**
+    *   Total group spending
+    *   Individual spending by member
+    *   Number of unsettled expenses
+
+#### 3.4.2. Settlement Summary (`SettlementSummaryView.tsx`)
+*   **Optimal Transactions Display:**
+    *   Clear, prioritized list: "Alice pays Bob $25"
+    *   Visual indicators for transaction amounts (larger = higher priority)
+    *   Running balance updates as transactions are marked complete
+*   **Settlement Actions:**
+    *   "Mark as Settled" for individual transactions
+    *   "Mark All as Settled" for full group settlement
+    *   Export options (text, email)
+*   **Finalization Flow (US7):**
+    *   Confirmation dialog before finalizing
+    *   Option to archive expenses after settlement
+    *   Success state with settlement completion confirmation
+
+## 4. LLM Interaction Design
+
+### 4.1. Confidence & Transparency Indicators
+*   **High Confidence (>0.9):** Green indicator, minimal assumptions shown
+*   **Medium Confidence (0.7-0.9):** Yellow indicator, prominent assumptions display
+*   **Low Confidence (<0.7):** Orange indicator, "Please review carefully" warning
+*   **Uncertainty:** Red indicator, triggers clarifying questions
+
+### 4.2. Error Handling & Recovery (OQ4)
+*   **User-Friendly Error Messages:**
+    *   "I couldn't process that expense - let's try the manual form"
+    *   "The expense service is temporarily unavailable"
+    *   "That seems like a complex split - let me ask a few questions"
+*   **Recovery Options:**
+    *   Always provide manual entry alternative
+    *   "Try Again" option for temporary failures
+    *   "Simplify Input" suggestions for complex scenarios
+
+### 4.3. Onboarding & User Education (OQ3)
+*   **First-Time User Tips:**
+    *   Overlay tooltips on expense input
+    *   Example prompts: "I paid $20 for pizza for Alice and me"
+    *   Progressive disclosure of advanced features
+*   **Help & Examples:**
+    *   "?" icon next to input with example library
+    *   Context-sensitive help based on current group members
+
+## 5. Visual Design
+
+*   **Component Library:** Shadcn/ui for consistent, modern interface
+*   **Layout:** Mobile-first responsive design (320px minimum width)
+*   **Typography:** 
+    *   Clear hierarchy with readable fonts
+    *   Adequate line spacing for financial data
+*   **Color Palette:**
+    *   Primary: Financial trust (blues/greens)
+    *   Success: Green for confirmations
+    *   Warning: Yellow/orange for clarifications
+    *   Error: Red for failures
+    *   Neutral: Grays for secondary information
+*   **Visual Feedback:**
+    *   Loading states for LLM processing
+    *   Success animations for confirmations
+    *   Smooth transitions between states
+    *   Toast notifications for actions
+
+## 6. Accessibility (A11y)
+
+*   **WCAG 2.1 AA Compliance:**
+    *   Color contrast ratios >4.5:1
+    *   Keyboard navigation for all interactions
+    *   Screen reader support with ARIA labels
+    *   Focus indicators for form fields
+*   **Financial Data Accessibility:**
+    *   Clear currency formatting
+    *   Decimal precision consistency
+    *   Alternative text for visual calculations
+
+## 7. Non-Functional Requirements (UX-Related)
+
+*   **Performance Targets:**
+    *   Page load times < 2 seconds on 3G networks
+    *   LLM processing < 10 seconds with visible progress
+    *   Form interactions < 100ms response time
+*   **Responsiveness:**
+    *   Usable on 320px width screens (mobile)
+    *   Touch-friendly targets (44px minimum)
+    *   Optimized for common mobile expense logging scenarios
+
+## 8. Design Boundaries (Non-Goals)
+
+*   **V1 Exclusions:**
+    *   Direct payment integration (Venmo, PayPal, etc.)
+    *   Receipt scanning/OCR functionality
+    *   Multi-language support (English only)
+    *   Advanced user roles/permissions within groups
+    *   Budgeting or spending analysis features
+    *   Recurring expense automation
+*   **Technical Limitations:**
+    *   No offline functionality (requires internet for LLM)
+    *   Limited to text-based expense input (no voice)
+
+## 9. Open Design Questions
+
+*   **OQ1 (LLM Assumptions Detail):** Current approach shows bullet points - need user testing to validate optimal level of detail
+*   **OQ2 (Low Confidence Handling):** Implementing visual confidence indicators - need to test user response to different thresholds
+*   **OQ3 (User Onboarding):** Example library and progressive disclosure approach - requires user research for optimal examples
+*   **Settlement Workflow:** Should "Mark as Settled" be per-transaction or all-at-once? Need to test user preferences
+*   **Mobile Optimization:** Touch targets for complex itemized expense editing - may need specialized mobile interactions

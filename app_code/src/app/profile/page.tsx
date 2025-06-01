@@ -31,10 +31,11 @@ interface ProfileData {
 }
 
 export default function ProfilePage() {
-  const { user, session, isLoading: authIsLoading } = useAuthContext()
+  const { user, isLoading: authIsLoading } = useAuthContext()
   const [profile, setProfile] = useState<ProfileData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [alert, setAlert] = useState<{ type: string; message: string } | null>(null)
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -43,28 +44,35 @@ export default function ProfilePage() {
     },
   })
 
-  const fetchProfile = useCallback(async (currentUser: User) => {
-    setLoading(true)
-    setError(null)
-    try {
-      const { data, error: fetchError } = await supabase
-        .from('profiles')
-        .select('name, email')
-        .eq('id', currentUser.id)
-        .single()
+  const fetchProfile = useCallback(
+    async (currentUser: User) => {
+      setLoading(true)
+      setError(null)
+      try {
+        const { data, error: fetchError } = await supabase
+          .from('profiles')
+          .select('name, email')
+          .eq('id', currentUser.id)
+          .single()
 
-      if (fetchError) throw fetchError
-      if (data) {
-        setProfile(data)
-        form.reset({ name: data.name }) // Populate form with fetched name
+        if (fetchError) throw fetchError
+        if (data) {
+          setProfile(data)
+          form.reset({ name: data.name }) // Populate form with fetched name
+        }
+      } catch (err) {
+        if (err instanceof Error) {
+          setError(err.message || 'Failed to fetch profile.')
+        } else {
+          setError('An unknown error occurred while fetching profile.')
+        }
+        console.error('Error fetching profile:', err)
+      } finally {
+        setLoading(false)
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch profile.')
-      console.error('Error fetching profile:', err)
-    } finally {
-      setLoading(false)
-    }
-  }, [form]) // Added form to dependency array for form.reset
+    },
+    [form]
+  ) // Added form to dependency array for form.reset
 
   useEffect(() => {
     if (user) {
@@ -75,23 +83,44 @@ export default function ProfilePage() {
     }
   }, [user, authIsLoading, fetchProfile])
 
-  const handleUpdateProfile = async (values: ProfileFormValues) => {
-    if (!user) return
-    setLoading(true)
-    setError(null)
-    try {
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ name: values.name, updated_at: new Date().toISOString() })
-        .eq('id', user.id)
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!user || !profile) return
 
-      if (updateError) throw updateError
-      // Re-fetch profile to show updated data (or update state directly)
-      await fetchProfile(user)
-      alert('Profile updated successfully!')
-    } catch (err: any) {
-      setError(err.message || 'Failed to update profile.')
+    // Get form data (example for name, expand as needed)
+    const formData = new FormData(event.currentTarget)
+    const name = formData.get('name') as string
+    // TODO: Get other fields if added to ProfileFormValues
+
+    const updatedProfile: Partial<ProfileFormValues> = {}
+    if (name !== profile.name) {
+      updatedProfile.name = name
+    }
+
+    if (Object.keys(updatedProfile).length === 0) {
+      setAlert({ type: 'info', message: 'No changes detected.' })
+      return
+    }
+
+    setLoading(true)
+    setAlert(null)
+
+    try {
+      const { error } = await supabase.from('profiles').update(updatedProfile).eq('id', user.id)
+
+      if (error) {
+        throw error
+      }
+      // Update local profile state with the new name to reflect changes immediately
+      setProfile((prev) => (prev ? { ...prev, ...updatedProfile } : null))
+      setAlert({ type: 'success', message: 'Profile updated successfully!' })
+    } catch (err) {
       console.error('Error updating profile:', err)
+      if (err instanceof Error) {
+        setAlert({ type: 'error', message: err.message })
+      } else {
+        setAlert({ type: 'error', message: 'An unknown error occurred.' })
+      }
     } finally {
       setLoading(false)
     }
@@ -114,22 +143,30 @@ export default function ProfilePage() {
       <h1 className='text-2xl font-bold mb-4'>Your Profile</h1>
       {profile && (
         <div className='mb-6'>
-          <p><span className='font-semibold'>Email:</span> {profile.email}</p>
+          <p>
+            <span className='font-semibold'>Email:</span> {profile.email}
+          </p>
           {/* Display current name from profile state, form will handle editing */}
-          <p><span className='font-semibold'>Current Name:</span> {profile.name}</p> 
+          <p>
+            <span className='font-semibold'>Current Name:</span> {profile.name}
+          </p>
         </div>
       )}
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleUpdateProfile)} className='space-y-6 max-w-md'>
+        <form onSubmit={handleSubmit} className='space-y-6 max-w-md'>
           <FormField
             control={form.control}
             name='name'
-            render={({ field }) => (
+            render={(
+              {
+                /* field */
+              }
+            ) => (
               <FormItem>
                 <FormLabel>Update Name</FormLabel>
                 <FormControl>
-                  <Input placeholder='New name' {...field} />
+                  <Input id='name' name='name' defaultValue={profile?.name || ''} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -138,9 +175,15 @@ export default function ProfilePage() {
           <Button type='submit' disabled={loading || authIsLoading}>
             {loading ? 'Updating...' : 'Update Profile'}
           </Button>
-          {error && <p className='mt-2 text-sm text-red-600'>{error}</p>}
+          {alert && (
+            <p
+              className={`mt-2 text-sm ${alert.type === 'success' ? 'text-green-600' : 'text-red-600'}`}
+            >
+              {alert.message}
+            </p>
+          )}
         </form>
       </Form>
     </div>
   )
-} 
+}

@@ -1,135 +1,152 @@
-'use client';
+'use client'
 
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import * as z from 'zod';
-import { Button } from '@/components/ui/button';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea'; // Assuming you'll add this Shadcn component
-import { useRouter } from 'next/navigation';
-import { useAuthContext } from '@/contexts/AuthContext';
-import { supabase } from '@/lib/supabaseClient';
-import { useState } from 'react';
+import React from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { supabase } from '@/lib/supabaseClient'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { useAuthContext } from '@/contexts/AuthContext'
+import type { Group } from '@/types/database'
 
-const groupFormSchema = z.object({
-  name: z.string().min(3, 'Group name must be at least 3 characters').max(50, 'Group name must be at most 50 characters'),
-  description: z.string().max(200, 'Description must be at most 200 characters').optional(),
-});
+const groupCreateSchema = z.object({
+  name: z
+    .string()
+    .min(1, 'Group name is required')
+    .max(100, 'Group name must be less than 100 characters'),
+  description: z.string().max(500, 'Description must be less than 500 characters').optional(),
+})
 
-type GroupFormValues = z.infer<typeof groupFormSchema>;
+type GroupCreateFormData = z.infer<typeof groupCreateSchema>
 
-export function GroupCreateForm() {
-  const router = useRouter();
-  const { user } = useAuthContext();
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+interface GroupCreateFormProps {
+  onSuccess?: (group: Group) => void
+  onCancel?: () => void
+}
 
-  const form = useForm<GroupFormValues>({
-    resolver: zodResolver(groupFormSchema),
-    defaultValues: {
-      name: '',
-      description: '',
-    },
-  });
+export function GroupCreateForm({ onSuccess, onCancel }: GroupCreateFormProps) {
+  const { user } = useAuthContext()
+  const queryClient = useQueryClient()
 
-  async function onSubmit(values: GroupFormValues) {
-    if (!user) {
-      setError('You must be logged in to create a group.');
-      router.push('/login');
-      return;
-    }
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    reset,
+  } = useForm<GroupCreateFormData>({
+    resolver: zodResolver(groupCreateSchema),
+  })
 
-    setIsLoading(true);
-    setError(null);
+  const createGroupMutation = useMutation({
+    mutationFn: async (data: GroupCreateFormData) => {
+      if (!user) {
+        throw new Error('User not authenticated')
+      }
 
-    try {
-      const { data, error: insertError } = await supabase
+      // Create the group
+      const { data: groupData, error: groupError } = await supabase
         .from('groups')
-        .insert([{ 
-          name: values.name, 
-          description: values.description,
-          created_by: user.id // 'created_by' should reference the user's profile id
-        }])
+        .insert({
+          name: data.name,
+          description: data.description || null,
+          created_by: user.id,
+        })
         .select()
-        .single();
+        .single<Group>()
 
-      if (insertError) {
-        throw insertError;
+      if (groupError) {
+        throw groupError
       }
 
-      if (data) {
-        // Optionally, create a GroupMember entry for the creator
-        const { error: memberError } = await supabase
-          .from('group_members')
-          .insert([{
-            group_id: data.id,
-            user_id: user.id, // This should be the profile ID
-            role: 'admin' // or 'owner'
-          }]);
-        
-        if (memberError) {
-          // Handle potential error where group is created but member entry fails
-          // May require cleanup or just a warning. For now, log it.
-          console.error('Error creating group member entry:', memberError);
-          setError('Group created, but failed to add you as a member. Please contact support.');
-        } else {
-          router.push(`/groups/${data.id}`); // Redirect to the new group's page
-        }
+      // Add the creator as an admin member
+      const { error: memberError } = await supabase.from('group_members').insert({
+        group_id: groupData.id,
+        user_id: user.id,
+        is_placeholder: false,
+        role: 'admin',
+      })
+
+      if (memberError) {
+        // If member creation fails, we should clean up the group
+        await supabase.from('groups').delete().eq('id', groupData.id)
+        throw memberError
       }
-    } catch (e: any) {
-      console.error('Error creating group:', e);
-      setError(e.message || 'An unexpected error occurred.');
-    } finally {
-      setIsLoading(false);
-    }
+
+      return groupData
+    },
+    onSuccess: (group) => {
+      // Invalidate and refetch groups list
+      queryClient.invalidateQueries({ queryKey: ['groups'] })
+      reset()
+      onSuccess?.(group)
+    },
+    onError: (error) => {
+      console.error('Failed to create group:', error)
+    },
+  })
+
+  const onSubmit = (data: GroupCreateFormData) => {
+    createGroupMutation.mutate(data)
   }
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Group Name</FormLabel>
-              <FormControl>
-                <Input placeholder="My Awesome Group" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+    <Card className='w-full max-w-md'>
+      <CardHeader>
+        <CardTitle>Create New Group</CardTitle>
+        <CardDescription>
+          Create a group to start tracking shared expenses with friends or family.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
+          <div className='space-y-2'>
+            <Label htmlFor='name'>Group Name</Label>
+            <Input
+              id='name'
+              {...register('name')}
+              placeholder='Enter group name'
+              disabled={isSubmitting}
+            />
+            {errors.name && <p className='text-sm text-red-600'>{errors.name.message}</p>}
+          </div>
+
+          <div className='space-y-2'>
+            <Label htmlFor='description'>Description (Optional)</Label>
+            <Textarea
+              id='description'
+              {...register('description')}
+              placeholder='Describe what this group is for'
+              disabled={isSubmitting}
+              rows={3}
+            />
+            {errors.description && (
+              <p className='text-sm text-red-600'>{errors.description.message}</p>
+            )}
+          </div>
+
+          {createGroupMutation.error && (
+            <div className='p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded'>
+              Failed to create group: {createGroupMutation.error.message}
+            </div>
           )}
-        />
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description (Optional)</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="A brief description of the group's purpose."
-                  className="resize-none"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        {error && <p className="text-sm font-medium text-destructive">{error}</p>}
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? 'Creating Group...' : 'Create Group'}
-        </Button>
-      </form>
-    </Form>
-  );
-} 
+
+          <div className='flex gap-3 pt-4'>
+            <Button type='submit' disabled={isSubmitting} className='flex-1'>
+              {isSubmitting ? 'Creating...' : 'Create Group'}
+            </Button>
+            {onCancel && (
+              <Button type='button' variant='outline' onClick={onCancel} disabled={isSubmitting}>
+                Cancel
+              </Button>
+            )}
+          </div>
+        </form>
+      </CardContent>
+    </Card>
+  )
+}

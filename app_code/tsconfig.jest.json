@@ -1,0 +1,22 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "jsx": "react-jsx", // or "react-jsxdev" for development
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "jest.config.js",
+    "jest.setup.js"
+  ],
+  "exclude": [
+    "node_modules",
+    ".next",
+    "supabase" // Exclude supabase directory if it contains non-TS files that might conflict
+  ]
+}

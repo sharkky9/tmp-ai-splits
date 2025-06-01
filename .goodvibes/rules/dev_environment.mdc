@@ -1,0 +1,8 @@
+---
+description: Rules that help with constraints specific to the Block corporate developer environment
+globs: 
+alwaysApply: false
+---
+Rules that help with constraints specific to the Block corporate developer environment
+
+- When installing packages, if we have problems with package managers, it may be appropriate for the user to disconnect from vpn.  If having issues installing packages, prompt the user to disconnect from vpn and then try again

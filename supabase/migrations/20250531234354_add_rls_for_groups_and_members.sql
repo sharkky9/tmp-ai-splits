@@ -12,7 +12,9 @@ AS $$
   SELECT EXISTS (
     SELECT 1
     FROM public.group_members gm
-    WHERE gm.group_id = p_group_id AND gm.user_id = p_user_id
+    WHERE gm.group_id = p_group_id 
+      AND gm.user_id = p_user_id
+      AND gm.is_placeholder = FALSE -- Ensure it's a real user, not a placeholder
   );
 $$;
 
@@ -26,7 +28,10 @@ AS $$
   SELECT EXISTS (
     SELECT 1
     FROM public.group_members gm
-    WHERE gm.group_id = p_group_id AND gm.user_id = p_user_id AND gm.role = 'admin'
+    WHERE gm.group_id = p_group_id 
+      AND gm.user_id = p_user_id 
+      AND gm.role = 'admin' -- Role check remains
+      AND gm.is_placeholder = FALSE -- Ensure it's a real user, not a placeholder
   );
 $$;
 

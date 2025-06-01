@@ -1,12 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation' // Corrected import for App Router
 import { SignUpForm, SignUpFormValues } from '@/components/Auth/SignUpForm'
 import { supabase } from '@/lib/supabaseClient'
 
 export default function SignUpPage() {
-  const router = useRouter()
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
@@ -31,11 +29,14 @@ export default function SignUpPage() {
 
       // Optionally, redirect the user or show a success message.
       // For now, let's assume Supabase sends a confirmation email.
-      alert('Sign-up successful! Please check your email to confirm.') 
+      alert('Sign-up successful! Please check your email to confirm.')
       // router.push('/some-success-page') // Or redirect to login
-
-    } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred.')
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message)
+      } else {
+        setError('An unexpected error occurred.')
+      }
     } finally {
       setIsLoading(false)
     }
@@ -58,4 +59,4 @@ export default function SignUpPage() {
       </div>
     </div>
   )
-} 
+}

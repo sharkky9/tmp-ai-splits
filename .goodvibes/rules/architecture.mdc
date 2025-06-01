@@ -1,0 +1,227 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+<!--
+<vibeSpec>
+    <purpose>This document serves as the high-level blueprint for the codebase, detailing its structure, key components, and their interactions. The AI requests this file to understand system organization and ensure new code aligns with established architectural patterns.</purpose>
+    <scope>
+        *   High-Level System Overview: Brief description/diagram of main parts and responsibilities.
+        *   Directory & File Structure Conventions: Guidelines for code organization.
+        *   Key Modules/Components/Services: Identification, description, responsibilities, and public interfaces (APIs).
+        *   Data Flow Patterns: Descriptions or diagrams (e.g., Mermaid sequence diagrams) showing data movement.
+        *   Key Design Patterns Employed: (e.g., MVC, Microservices, Repository Pattern).
+        *   Communication Protocols (Internal): How system parts interact (e.g., REST, gRPC, Message Queues).
+        *   Database Schema Overview (Conceptual): High-level description of key entities and relationships (not full DDL).
+    </scope>
+    <nonScope>
+        *   Detailed UI mockups or user flows (`design.mdc`).
+        *   Minor library choices unless architecturally significant (`tech-stack.mdc`).
+        *   Implementation details of individual functions/methods.
+        *   Exhaustive lists of every file/class; focus on structure and patterns.
+    </nonScope>
+    <usageNotes>Initial draft generated via `prompt-0-context-setup.md`. This is a "living document" updated throughout development, either via `prompt-5-update-context-doc.md` or as specified within implementation plan steps after validation. Requires regular human review. AI Agents should request this document when needing to understand system structure or placement of new components.</usageNotes>
+</vibeSpec>
+-->
+
+# System Architecture
+
+## 1. Overview
+
+The application is a web-based platform built on a Next.js frontend and a Supabase backend. It leverages an LLM (OpenAI GPT) for natural language expense processing, with robust error handling, fallback mechanisms, and analytics for tracking success metrics.
+
+## 2. Frontend Architecture
+
+*   **Framework:** Next.js (React) with App Router
+*   **Language:** TypeScript
+*   **UI Components:** Shadcn/ui, Tailwind CSS
+*   **State Management:** React Context API (for Auth), React Query for server state management and caching
+*   **Key Modules:**
+    *   `components/Auth`: User sign-up, login forms
+    *   `components/Groups`: Group creation, listing, member management
+    *   `components/Expenses`: Natural language input, expense confirmation/editing, manual expense forms, expense lists, itemized expense handling
+    *   `components/Settlement`: Settlement summary display, debt finalization
+    *   `components/Ledger`: Group ledger display
+    *   `components/LLM`: Clarifying question dialogs, confidence indicators, error fallbacks
+    *   `pages`: Next.js page components for different views (Auth, Groups, Group Detail)
+    *   `contexts`: AuthContext for managing authentication state
+    *   `hooks`: Custom hooks like `useAuth`, `useExpenseSubmission`, `useSettlementCalculation`
+    *   `lib`: Utility functions (currency with decimal.js, date with date-fns, Supabase client)
+    *   `lib/analytics`: User action tracking for success metrics
+
+## 3. Backend Architecture
+
+*   **Platform:** Supabase
+*   **Database:** PostgreSQL with Row Level Security (RLS)
+*   **Authentication:** Supabase Auth
+*   **Serverless Functions:** Supabase Edge Functions
+    *   `parse-expense`: Handles OpenAI API interaction, supports multiple expenses per input, implements error handling and fallback strategies
+    *   `calculate-settlement`: Implements debt simplification algorithm (minimum spanning tree approach)
+    *   `analytics-tracker`: Tracks success metrics (correction rates, completion times, user satisfaction)
+*   **Data Access:** `supabase-js` client library with comprehensive error handling
+
+## 4. LLM Integration Architecture
+
+*   **Model:** OpenAI GPT-4 (with fallback to GPT-3.5-turbo for cost optimization)
+*   **Interaction Patterns:**
+    *   **Primary Flow:** Natural language input → structured expense data
+    *   **Clarification Flow:** LLM uncertainty → clarifying questions → user response → refined interpretation
+    *   **Multi-Expense Flow:** Single input containing multiple expenses → array of structured expense objects
+    *   **Fallback Flow:** LLM failure → manual expense entry form
+*   **Prompt Engineering:** 
+    *   Context-aware prompts with group member information
+    *   Structured output format enforcement via JSON schema
+    *   Confidence scoring for interpretations
+*   **Error Handling:**
+    *   API timeout handling (10s timeout)
+    *   Rate limiting management
+    *   Graceful degradation to manual entry
+    *   Retry logic with exponential backoff
+
+## 5. Data Model (Supabase PostgreSQL)
+
+*   **Users Table:** Stores user profile information (linked to `auth.users`)
+    *   `id` (uuid, primary key, foreign key to `auth.users.id`)
+    *   `name` (text, required)
+    *   `email` (text, from `auth.users.email`)
+    *   `created_at` (timestamp with time zone)
+    *   `updated_at` (timestamp with time zone)
+
+*   **Groups Table:**
+    *   `group_id` (uuid, primary key)
+    *   `name` (text, required)
+    *   `created_by` (uuid, foreign key to `Users.id`)
+    *   `created_at` (timestamp with time zone)
+    *   `updated_at` (timestamp with time zone)
+
+*   **GroupMembers Table:** (Links users to groups, supports placeholder members)
+    *   `group_member_id` (uuid, primary key)
+    *   `group_id` (uuid, foreign key to `Groups.group_id`)
+    *   `user_id` (uuid, foreign key to `Users.id`, nullable for placeholder members)
+    *   `placeholder_name` (text, nullable)
+    *   `email` (text, nullable, for inviting or associating later)
+    *   `is_placeholder` (boolean, default false)
+    *   `joined_at` (timestamp with time zone)
+
+*   **Expenses Table:** (Stores structured expense data as per FR3.5)
+    *   `expense_id` (uuid, primary key)
+    *   `group_id` (uuid, foreign key to `Groups.group_id`)
+    *   `description` (text)
+    *   `original_input_text` (text)
+    *   `total_amount` (numeric(10,2))
+    *   `currency` (text, default "USD")
+    *   `date_of_expense` (date)
+    *   `payers` (jsonb array: `[{ member_id, amount_paid }]`)
+    *   `participants` (jsonb array: `[{ member_id, share_type, share_value, calculated_owed_amount }]`)
+    *   `items` (jsonb array, optional: `[{ item_description, item_amount, item_participants }]`)
+    *   `llm_assumptions` (text array)
+    *   `llm_confidence_score` (numeric(3,2), nullable)
+    *   `status` (text, enum: 'pending_confirmation', 'confirmed', 'edited', 'discarded')
+    *   `created_by` (uuid, foreign key to `Users.id`)
+    *   `created_at` (timestamp with time zone)
+    *   `updated_at` (timestamp with time zone)
+    *   `processing_metadata` (jsonb, stores LLM processing info for analytics)
+
+*   **AnalyticsEvents Table:** (Tracks success metrics)
+    *   `event_id` (uuid, primary key)
+    *   `user_id` (uuid, foreign key to `Users.id`)
+    *   `group_id` (uuid, foreign key to `Groups.group_id`, nullable)
+    *   `expense_id` (uuid, foreign key to `Expenses.expense_id`, nullable)
+    *   `event_type` (text, enum: 'expense_logged', 'expense_edited', 'settlement_viewed', 'clarification_asked')
+    *   `event_data` (jsonb)
+    *   `created_at` (timestamp with time zone)
+
+## 6. Key Interactions & Flows
+
+### 6.1. User Authentication Flow
+1. Frontend (`SignUpForm.tsx`, `LoginForm.tsx`) → Supabase Auth
+2. AuthContext updates across application
+3. RLS policies enforce data access control
+
+### 6.2. Group Management Flow
+1. Frontend (`GroupCreateForm.tsx`) → `supabase-js` client → `Groups` table
+2. Member addition → `GroupMembers` table (with placeholder support)
+3. Email association → update placeholder members
+
+### 6.3. Expense Logging (LLM) Flow
+1. User inputs text in `NLLExpenseInput.tsx`
+2. Frontend calls `parse-expense` Supabase Edge Function
+3. Edge Function:
+   - Calls OpenAI API with context-aware prompt
+   - Handles multiple expenses if detected
+   - Returns structured data OR clarifying questions
+   - Logs analytics events
+4. Frontend displays:
+   - `ExpenseConfirmationCard.tsx` for successful parsing
+   - `ClarifyingQuestionDialog.tsx` for uncertain interpretations
+   - `ManualExpenseForm.tsx` for LLM failures
+5. User confirmation → `Expenses` table (status: 'confirmed')
+
+### 6.4. Settlement Calculation Flow
+1. Frontend (`SettlementSummaryView.tsx`) calls `calculate-settlement` Edge Function
+2. Edge Function:
+   - Fetches all confirmed expenses for group
+   - Calculates net balances between members
+   - Applies debt simplification algorithm (minimum transactions)
+   - Returns optimized settlement plan
+3. Frontend displays simplified transactions
+
+### 6.5. Analytics Flow
+1. User actions trigger analytics events
+2. `analytics-tracker` Edge Function processes events
+3. Metrics aggregated for success tracking (correction rates, completion times)
+
+## 7. Error Handling & Resilience Patterns
+
+*   **LLM Integration:**
+    *   Circuit breaker pattern for OpenAI API
+    *   Timeout handling (10 seconds)
+    *   Retry with exponential backoff
+    *   Graceful degradation to manual entry
+*   **Database Operations:**
+    *   Transaction rollback for multi-table operations
+    *   Connection pooling and retry logic
+    *   RLS policy enforcement
+*   **Frontend:**
+    *   React Error Boundaries for component failures
+    *   Optimistic updates with rollback
+    *   Offline detection and queuing
+
+## 8. Debt Simplification Algorithm
+
+*   **Approach:** Modified minimum spanning tree algorithm
+*   **Goal:** Minimize number of transactions while settling all debts
+*   **Implementation:** 
+    *   Calculate net balances between all member pairs
+    *   Build debt graph with positive/negative balances
+    *   Apply greedy algorithm to find minimum transaction set
+*   **Edge Cases:** Handle floating-point precision using decimal.js
+
+## 9. Analytics & Success Metrics Architecture
+
+*   **Real-time Tracking:**
+    *   LLM correction rates (target: <20%)
+    *   Expense logging completion times
+    *   Clarification question frequency
+*   **Batch Processing:**
+    *   Daily/weekly metric aggregation
+    *   User satisfaction surveys (NPS/CSAT)
+    *   Settlement completion rates
+*   **Data Storage:** 
+    *   `AnalyticsEvents` table for raw events
+    *   Aggregated metrics in separate analytics database (future)
+
+## 10. Deployment Architecture
+
+*   **Frontend (Next.js):** Vercel with environment-specific configurations
+*   **Backend (Supabase):** Supabase Cloud with production/staging environments
+*   **Monitoring:** Vercel Analytics + Supabase built-in monitoring
+*   **Secrets Management:** Environment variables for API keys and configurations
+
+## 11. Scalability Considerations
+
+*   **Database:** Indexed foreign keys, optimized queries, connection pooling
+*   **LLM API:** Rate limiting, cost optimization, caching frequent interpretations
+*   **Frontend:** Code splitting, lazy loading, CDN optimization
+*   **Future:** Horizontal scaling of Edge Functions, read replicas for analytics

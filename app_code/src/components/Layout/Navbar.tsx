@@ -25,7 +25,9 @@ export function Navbar() {
           SplitApp
         </Link>
         <div className='space-x-4'>
-          <Link href='/' className='hover:text-gray-300'>Home</Link>
+          <Link href='/' className='hover:text-gray-300'>
+            Home
+          </Link>
           {/* Add other common links here, e.g., About, Features */}
 
           {isLoading ? (
@@ -35,7 +37,12 @@ export function Navbar() {
               <Link href='/profile' className='hover:text-gray-300'>
                 Profile
               </Link>
-              <Button onClick={handleLogout} variant='outline' size='sm' className='text-white border-white hover:bg-gray-700'>
+              <Button
+                onClick={handleLogout}
+                variant='outline'
+                size='sm'
+                className='text-white border-white hover:bg-gray-700'
+              >
                 Logout
               </Button>
             </>
@@ -53,4 +60,4 @@ export function Navbar() {
       </div>
     </nav>
   )
-} 
+}
