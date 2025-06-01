@@ -209,16 +209,19 @@ All user inputs are validated using:
 ### Common Issues
 
 1. **Build Failures**:
+
    - Check TypeScript errors: `npm run type-check`
    - Verify environment variables are set
    - Ensure all dependencies are installed
 
 2. **Database Connection Issues**:
+
    - Verify Supabase URL and keys
    - Check RLS policies are correctly configured
    - Ensure database migrations are applied
 
 3. **OpenAI API Issues**:
+
    - Verify API key is valid and has credits
    - Check rate limits haven't been exceeded
    - Ensure proper error handling for API failures
@@ -247,4 +250,4 @@ Before marking deployment as complete, verify:
 - ✅ Performance metrics meet requirements
 - ✅ Error monitoring is configured
 - ✅ Security policies are in place
-- ✅ Health checks are passing 
+- ✅ Health checks are passing

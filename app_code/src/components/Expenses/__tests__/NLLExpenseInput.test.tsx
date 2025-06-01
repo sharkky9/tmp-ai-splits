@@ -8,9 +8,9 @@ describe('NLLExpenseInput', () => {
       supportedLanguages: ['en'],
       fallbackToManual: true,
       targetCorrectionRate: 0.2, // 20%
-      targetProcessingTime: 30000 // 30 seconds
+      targetProcessingTime: 30000, // 30 seconds
     }
-    
+
     expect(requirements.maxInputLength).toBe(500)
     expect(requirements.fallbackToManual).toBe(true)
     expect(requirements.targetCorrectionRate).toBeLessThanOrEqual(0.2)
@@ -24,9 +24,9 @@ describe('NLLExpenseInput', () => {
       parseAmount: true,
       parseParticipants: true,
       parseDate: true,
-      handleAmbiguity: true
+      handleAmbiguity: true,
     }
-    
+
     expect(processingRequirements.parseDescription).toBe(true)
     expect(processingRequirements.parseAmount).toBe(true)
     expect(processingRequirements.parseParticipants).toBe(true)
@@ -41,9 +41,9 @@ describe('NLLExpenseInput', () => {
       maxLength: 500,
       allowedCharacters: /^[\w\s.,!?$€£¥-]+$/,
       requiredFields: ['description'],
-      optionalFields: ['amount', 'participants', 'date']
+      optionalFields: ['amount', 'participants', 'date'],
     }
-    
+
     expect(validationRules.minLength).toBeGreaterThan(0)
     expect(validationRules.maxLength).toBe(500)
     expect(validationRules.requiredFields).toContain('description')
@@ -56,9 +56,9 @@ describe('NLLExpenseInput', () => {
       hasLoadingIndicator: true,
       showProgress: true,
       allowCancel: true,
-      timeoutLimit: 30000
+      timeoutLimit: 30000,
     }
-    
+
     expect(loadingStates.hasLoadingIndicator).toBe(true)
     expect(loadingStates.showProgress).toBe(true)
     expect(loadingStates.allowCancel).toBe(true)

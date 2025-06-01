@@ -11,7 +11,7 @@ describe('End-to-End Integration Tests', () => {
   describe('Complete User Journey Simulation', () => {
     it('should handle the complete expense splitting workflow', () => {
       // Test 1: Currency calculations work correctly
-      const expenseAmount = CurrencyUtils.createMoney(120.50, 'USD')
+      const expenseAmount = CurrencyUtils.createMoney(120.5, 'USD')
       const splitAmount = CurrencyUtils.divide(expenseAmount, 3)
       expect(CurrencyUtils.format(splitAmount)).toBe('$40.17')
 
@@ -32,8 +32,8 @@ describe('End-to-End Integration Tests', () => {
       // Test 5: Complex split calculations
       const complexExpense = CurrencyUtils.createMoney(100, 'USD')
       const splits = CurrencyUtils.splitEvenly(complexExpense, 3)
-      const totalAfterSplit = splits.reduce((acc, split) => 
-        CurrencyUtils.add(acc, split), 
+      const totalAfterSplit = splits.reduce(
+        (acc, split) => CurrencyUtils.add(acc, split),
         CurrencyUtils.createMoney(0, 'USD')
       )
       expect(CurrencyUtils.equals(totalAfterSplit, complexExpense)).toBe(true)
@@ -42,9 +42,9 @@ describe('End-to-End Integration Tests', () => {
     it('should handle settlement calculation scenarios', () => {
       // Simulate a debt simplification scenario
       const memberBalances = [
-        { memberId: 'alice', balance: 50 },   // Alice is owed $50
-        { memberId: 'bob', balance: -30 },    // Bob owes $30
-        { memberId: 'charlie', balance: -20 } // Charlie owes $20
+        { memberId: 'alice', balance: 50 }, // Alice is owed $50
+        { memberId: 'bob', balance: -30 }, // Bob owes $30
+        { memberId: 'charlie', balance: -20 }, // Charlie owes $20
       ]
 
       // Test that balances sum to zero (fundamental requirement)
@@ -70,7 +70,7 @@ describe('End-to-End Integration Tests', () => {
       expect(CurrencyUtils.format(zeroAmount)).toBe('$0.00')
 
       // Test precision in splits
-      const precisionTest = CurrencyUtils.createMoney(0.10, 'USD')
+      const precisionTest = CurrencyUtils.createMoney(0.1, 'USD')
       const preciseSplits = CurrencyUtils.splitEvenly(precisionTest, 3)
       // Should be [0.04, 0.03, 0.03] to maintain precision
       expect(CurrencyUtils.format(preciseSplits[0])).toBe('$0.04')
@@ -86,7 +86,7 @@ describe('End-to-End Integration Tests', () => {
       // Test date formatting edge cases
       const futureDate = DateUtils.addDays(today, 30)
       const pastDate = DateUtils.subtractDays(today, 30)
-      
+
       expect(DateUtils.isAfter(futureDate, today)).toBe(true)
       expect(DateUtils.isBefore(pastDate, today)).toBe(true)
 
@@ -102,18 +102,16 @@ describe('End-to-End Integration Tests', () => {
       const expenseData = {
         id: 'expense-1',
         description: 'Dinner at restaurant',
-        total_amount: 120.50,
+        total_amount: 120.5,
         currency: 'USD',
         date_of_expense: '2024-01-15',
-        payers: [
-          { user_id: 'alice', amount: 120.50 }
-        ],
+        payers: [{ user_id: 'alice', amount: 120.5 }],
         participants: [
           { user_id: 'alice', amount: 40.17 },
           { user_id: 'bob', amount: 40.17 },
-          { user_id: 'charlie', amount: 40.16 }
+          { user_id: 'charlie', amount: 40.16 },
         ],
-        status: 'confirmed'
+        status: 'confirmed',
       }
 
       // Validate expense structure
@@ -124,8 +122,11 @@ describe('End-to-End Integration Tests', () => {
 
       // Validate amounts balance
       const payersTotal = expenseData.payers.reduce((sum, payer) => sum + payer.amount, 0)
-      const participantsTotal = expenseData.participants.reduce((sum, participant) => sum + participant.amount, 0)
-      
+      const participantsTotal = expenseData.participants.reduce(
+        (sum, participant) => sum + participant.amount,
+        0
+      )
+
       expect(Math.abs(payersTotal - expenseData.total_amount)).toBeLessThan(0.01)
       expect(Math.abs(participantsTotal - expenseData.total_amount)).toBeLessThan(0.01)
     })
@@ -140,20 +141,20 @@ describe('End-to-End Integration Tests', () => {
             fromMemberName: 'Bob Smith',
             toMemberId: 'alice',
             toMemberName: 'Alice Johnson',
-            amount: 30.00,
+            amount: 30.0,
             currency: 'USD',
             isFromPlaceholder: false,
-            isToPlaceholder: false
-          }
+            isToPlaceholder: false,
+          },
         ],
         memberBalances: [
-          { memberId: 'alice', memberName: 'Alice Johnson', balance: 50.00 },
-          { memberId: 'bob', memberName: 'Bob Smith', balance: -30.00 },
-          { memberId: 'charlie', memberName: 'Charlie Brown', balance: -20.00 }
+          { memberId: 'alice', memberName: 'Alice Johnson', balance: 50.0 },
+          { memberId: 'bob', memberName: 'Bob Smith', balance: -30.0 },
+          { memberId: 'charlie', memberName: 'Charlie Brown', balance: -20.0 },
         ],
-        totalSettlementAmount: 50.00,
+        totalSettlementAmount: 50.0,
         currency: 'USD',
-        minimumTransactions: 2
+        minimumTransactions: 2,
       }
 
       // Validate settlement structure
@@ -162,14 +163,17 @@ describe('End-to-End Integration Tests', () => {
       expect(settlementData.totalSettlementAmount).toBeGreaterThan(0)
 
       // Validate transaction amounts are positive
-      settlementData.transactions.forEach(transaction => {
+      settlementData.transactions.forEach((transaction) => {
         expect(transaction.amount).toBeGreaterThan(0)
         expect(transaction.fromMemberId).toBeTruthy()
         expect(transaction.toMemberId).toBeTruthy()
       })
 
       // Validate member balances sum to zero
-      const totalBalance = settlementData.memberBalances.reduce((sum, member) => sum + member.balance, 0)
+      const totalBalance = settlementData.memberBalances.reduce(
+        (sum, member) => sum + member.balance,
+        0
+      )
       expect(Math.abs(totalBalance)).toBeLessThan(0.01)
     })
   })
@@ -177,17 +181,17 @@ describe('End-to-End Integration Tests', () => {
   describe('Performance and Scalability Tests', () => {
     it('should handle large expense lists efficiently', () => {
       const startTime = Date.now()
-      
+
       // Simulate processing 100 expenses
       const expenses = Array.from({ length: 100 }, (_, i) => ({
         id: `expense-${i}`,
         amount: Math.random() * 1000,
-        date: DateUtils.addDays(new Date(), -i)
+        date: DateUtils.addDays(new Date(), -i),
       }))
 
       // Test sorting by date (common operation)
-      const sortedExpenses = expenses.sort((a, b) => 
-        new Date(b.date).getTime() - new Date(a.date).getTime()
+      const sortedExpenses = expenses.sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
       )
 
       const endTime = Date.now()
@@ -211,11 +215,11 @@ describe('End-to-End Integration Tests', () => {
       expect(processingTime).toBeLessThan(50) // Should complete quickly
 
       // Verify precision is maintained
-      const totalAfterSplit = manySplits.reduce((acc, split) => 
-        CurrencyUtils.add(acc, split), 
+      const totalAfterSplit = manySplits.reduce(
+        (acc, split) => CurrencyUtils.add(acc, split),
         CurrencyUtils.createMoney(0, 'USD')
       )
       expect(CurrencyUtils.equals(totalAfterSplit, largeAmount)).toBe(true)
     })
   })
-}) 
+})

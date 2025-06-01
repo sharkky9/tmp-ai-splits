@@ -70,14 +70,17 @@ export function GroupLedgerView({
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('all')
   const [selectedMember, setSelectedMember] = useState<string>('all')
 
-  const getMemberName = useCallback((userId?: string, placeholderName?: string) => {
-    if (placeholderName) return placeholderName
-    if (userId) {
-      const member = groupMembers.find(m => m.user_id === userId)
-      return member?.profiles?.name || member?.profiles?.email || 'Unknown User'
-    }
-    return 'Unknown'
-  }, [groupMembers])
+  const getMemberName = useCallback(
+    (userId?: string, placeholderName?: string) => {
+      if (placeholderName) return placeholderName
+      if (userId) {
+        const member = groupMembers.find((m) => m.user_id === userId)
+        return member?.profiles?.name || member?.profiles?.email || 'Unknown User'
+      }
+      return 'Unknown'
+    },
+    [groupMembers]
+  )
 
   // Calculate member summaries
   const memberSummaries = useMemo((): MemberSummary[] => {
@@ -134,20 +137,25 @@ export function GroupLedgerView({
 
     // Apply status filter
     if (statusFilter !== 'all') {
-      filteredExpenses = filteredExpenses.filter(expense => expense.status === statusFilter)
+      filteredExpenses = filteredExpenses.filter((expense) => expense.status === statusFilter)
     }
 
     // Apply member filter
     if (selectedMember !== 'all') {
-      filteredExpenses = filteredExpenses.filter(expense =>
-        expense.payers.some(p => 
-          (p.user_id === selectedMember) || 
-          (selectedMember.startsWith('placeholder-') && p.placeholder_name === selectedMember.replace('placeholder-', ''))
-        ) ||
-        expense.participants.some(p => 
-          (p.user_id === selectedMember) || 
-          (selectedMember.startsWith('placeholder-') && p.placeholder_name === selectedMember.replace('placeholder-', ''))
-        )
+      filteredExpenses = filteredExpenses.filter(
+        (expense) =>
+          expense.payers.some(
+            (p) =>
+              p.user_id === selectedMember ||
+              (selectedMember.startsWith('placeholder-') &&
+                p.placeholder_name === selectedMember.replace('placeholder-', ''))
+          ) ||
+          expense.participants.some(
+            (p) =>
+              p.user_id === selectedMember ||
+              (selectedMember.startsWith('placeholder-') &&
+                p.placeholder_name === selectedMember.replace('placeholder-', ''))
+          )
       )
     }
 
@@ -179,7 +187,7 @@ export function GroupLedgerView({
 
     // Create ledger entries with running totals
     let runningTotal = 0
-    return filteredExpenses.map(expense => {
+    return filteredExpenses.map((expense) => {
       runningTotal += expense.total_amount
 
       return {
@@ -189,17 +197,17 @@ export function GroupLedgerView({
         amount: expense.total_amount,
         currency: expense.currency,
         status: expense.status,
-        payers: expense.payers.map(payer => ({
+        payers: expense.payers.map((payer) => ({
           name: getMemberName(payer.user_id, payer.placeholder_name),
           amount: payer.amount,
-          isPlaceholder: !!payer.placeholder_name
+          isPlaceholder: !!payer.placeholder_name,
         })),
-        participants: expense.participants.map(participant => ({
+        participants: expense.participants.map((participant) => ({
           name: getMemberName(participant.user_id, participant.placeholder_name),
           amount: participant.amount,
-          isPlaceholder: !!participant.placeholder_name
+          isPlaceholder: !!participant.placeholder_name,
         })),
-        runningTotal
+        runningTotal,
       }
     })
   }, [expenses, statusFilter, selectedMember, sortField, sortDirection, getMemberName])

@@ -12,19 +12,19 @@ export const formatCurrency = (amount: number, currencyCode: string = 'USD'): st
       style: 'currency',
       currency: currencyCode.toUpperCase(),
       minimumFractionDigits: 2,
-      maximumFractionDigits: 2
+      maximumFractionDigits: 2,
     }).format(amount)
   } catch {
     // Fallback to basic formatting with currency symbol
     const symbols: Record<string, string> = {
-      'USD': '$',
-      'EUR': '€', 
-      'GBP': '£',
-      'CAD': 'C$',
-      'AUD': 'A$',
-      'JPY': '¥'
+      USD: '$',
+      EUR: '€',
+      GBP: '£',
+      CAD: 'C$',
+      AUD: 'A$',
+      JPY: '¥',
     }
-    
+
     const symbol = symbols[currencyCode.toUpperCase()] || currencyCode.toUpperCase()
     return `${symbol}${amount.toFixed(2)}`
   }

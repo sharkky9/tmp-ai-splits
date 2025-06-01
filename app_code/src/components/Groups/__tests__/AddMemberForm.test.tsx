@@ -8,9 +8,9 @@ describe('AddMemberForm', () => {
       uniqueEmailCheck: true,
       sendInvitation: true,
       maxEmailLength: 254,
-      emailPattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      emailPattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
     }
-    
+
     expect(emailMemberRequirements.emailValidation).toBe(true)
     expect(emailMemberRequirements.uniqueEmailCheck).toBe(true)
     expect(emailMemberRequirements.sendInvitation).toBe(true)
@@ -26,9 +26,9 @@ describe('AddMemberForm', () => {
       uniqueNameCheck: true,
       maxNameLength: 100,
       minNameLength: 1,
-      allowedCharacters: /^[\w\s.-]+$/
+      allowedCharacters: /^[\w\s.-]+$/,
     }
-    
+
     expect(placeholderRequirements.nameValidation).toBe(true)
     expect(placeholderRequirements.uniqueNameCheck).toBe(true)
     expect(placeholderRequirements.maxNameLength).toBe(100)
@@ -44,9 +44,9 @@ describe('AddMemberForm', () => {
       checkNameDuplicates: true,
       caseSensitiveCheck: false,
       showDuplicateError: true,
-      allowSameNameDifferentGroups: true
+      allowSameNameDifferentGroups: true,
     }
-    
+
     expect(duplicatePreventionRules.checkEmailDuplicates).toBe(true)
     expect(duplicatePreventionRules.checkNameDuplicates).toBe(true)
     expect(duplicatePreventionRules.caseSensitiveCheck).toBe(false)
@@ -61,9 +61,9 @@ describe('AddMemberForm', () => {
       realTimeValidation: true,
       submitButtonDisabling: true,
       errorMessageDisplay: true,
-      successFeedback: true
+      successFeedback: true,
     }
-    
+
     expect(formValidation.requireEitherEmailOrName).toBe(true)
     expect(formValidation.realTimeValidation).toBe(true)
     expect(formValidation.submitButtonDisabling).toBe(true)

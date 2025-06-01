@@ -37,7 +37,7 @@ class PerformanceMonitor {
       startTime: Date.now(),
       correctionRequired: false,
       method,
-      success: false
+      success: false,
     })
   }
 
@@ -66,12 +66,12 @@ class PerformanceMonitor {
       this.recordMetric('expense_logging_time', duration, {
         method: session.method,
         correctionRequired: session.correctionRequired,
-        success
+        success,
       })
 
       // Track correction rate metric
       this.recordMetric('expense_correction_rate', session.correctionRequired ? 1 : 0, {
-        method: session.method
+        method: session.method,
       })
 
       this.expenseLoggingSessions.delete(sessionId)
@@ -84,17 +84,17 @@ class PerformanceMonitor {
   recordSettlementMetrics(metrics: SettlementMetrics): void {
     this.recordMetric('settlement_transaction_count', metrics.transactionCount, {
       memberCount: metrics.memberCount,
-      totalAmount: metrics.totalAmount
+      totalAmount: metrics.totalAmount,
     })
 
     this.recordMetric('settlement_calculation_time', metrics.calculationTime, {
       memberCount: metrics.memberCount,
-      transactionCount: metrics.transactionCount
+      transactionCount: metrics.transactionCount,
     })
 
     this.recordMetric('settlement_total_amount', metrics.totalAmount, {
       memberCount: metrics.memberCount,
-      transactionCount: metrics.transactionCount
+      transactionCount: metrics.transactionCount,
     })
   }
 
@@ -106,7 +106,7 @@ class PerformanceMonitor {
       name,
       value,
       timestamp: new Date(),
-      metadata
+      metadata,
     })
 
     // Keep only last 1000 metrics to prevent memory issues
@@ -126,25 +126,29 @@ class PerformanceMonitor {
     totalExpensesLogged: number
     totalSettlementsCalculated: number
   } {
-    const expenseTimings = this.metrics.filter(m => m.name === 'expense_logging_time')
-    const corrections = this.metrics.filter(m => m.name === 'expense_correction_rate')
-    const settlementTimings = this.metrics.filter(m => m.name === 'settlement_calculation_time')
+    const expenseTimings = this.metrics.filter((m) => m.name === 'expense_logging_time')
+    const corrections = this.metrics.filter((m) => m.name === 'expense_correction_rate')
+    const settlementTimings = this.metrics.filter((m) => m.name === 'settlement_calculation_time')
 
-    const averageExpenseLoggingTime = expenseTimings.length > 0
-      ? expenseTimings.reduce((sum, m) => sum + m.value, 0) / expenseTimings.length
-      : 0
+    const averageExpenseLoggingTime =
+      expenseTimings.length > 0
+        ? expenseTimings.reduce((sum, m) => sum + m.value, 0) / expenseTimings.length
+        : 0
 
-    const correctionRate = corrections.length > 0
-      ? corrections.reduce((sum, m) => sum + m.value, 0) / corrections.length
-      : 0
+    const correctionRate =
+      corrections.length > 0
+        ? corrections.reduce((sum, m) => sum + m.value, 0) / corrections.length
+        : 0
 
-    const successRate = expenseTimings.length > 0
-      ? expenseTimings.filter(m => m.metadata?.success).length / expenseTimings.length
-      : 0
+    const successRate =
+      expenseTimings.length > 0
+        ? expenseTimings.filter((m) => m.metadata?.success).length / expenseTimings.length
+        : 0
 
-    const averageSettlementTime = settlementTimings.length > 0
-      ? settlementTimings.reduce((sum, m) => sum + m.value, 0) / settlementTimings.length
-      : 0
+    const averageSettlementTime =
+      settlementTimings.length > 0
+        ? settlementTimings.reduce((sum, m) => sum + m.value, 0) / settlementTimings.length
+        : 0
 
     return {
       averageExpenseLoggingTime,
@@ -152,7 +156,7 @@ class PerformanceMonitor {
       successRate,
       averageSettlementTime,
       totalExpensesLogged: expenseTimings.length,
-      totalSettlementsCalculated: settlementTimings.length
+      totalSettlementsCalculated: settlementTimings.length,
     }
   }
 
@@ -168,12 +172,16 @@ class PerformanceMonitor {
 
     // Check average expense logging time < 30 seconds (30000ms)
     if (metrics.averageExpenseLoggingTime > 30000) {
-      issues.push(`Average expense logging time (${Math.round(metrics.averageExpenseLoggingTime / 1000)}s) exceeds 30s requirement`)
+      issues.push(
+        `Average expense logging time (${Math.round(metrics.averageExpenseLoggingTime / 1000)}s) exceeds 30s requirement`
+      )
     }
 
     // Check correction rate < 20% (0.2)
     if (metrics.correctionRate > 0.2) {
-      issues.push(`LLM correction rate (${Math.round(metrics.correctionRate * 100)}%) exceeds 20% requirement`)
+      issues.push(
+        `LLM correction rate (${Math.round(metrics.correctionRate * 100)}%) exceeds 20% requirement`
+      )
     }
 
     // Check success rate > 90% (0.9)
@@ -183,7 +191,7 @@ class PerformanceMonitor {
 
     return {
       meetsRequirements: issues.length === 0,
-      issues
+      issues,
     }
   }
 
@@ -217,9 +225,9 @@ export function measureExecutionTime<T>(
   const startTime = Date.now()
   const result = fn()
   const endTime = Date.now()
-  
+
   performanceMonitor.recordMetric(metricName, endTime - startTime, metadata)
-  
+
   return result
 }
 
@@ -234,9 +242,9 @@ export async function measureAsyncExecutionTime<T>(
   const startTime = Date.now()
   const result = await fn()
   const endTime = Date.now()
-  
+
   performanceMonitor.recordMetric(metricName, endTime - startTime, metadata)
-  
+
   return result
 }
 
@@ -245,15 +253,13 @@ export async function measureAsyncExecutionTime<T>(
  */
 export function usePerformanceTracking(componentName: string) {
   const startTime = Date.now()
-  
+
   return {
     recordRenderTime: () => {
       const endTime = Date.now()
       performanceMonitor.recordMetric('component_render_time', endTime - startTime, {
-        component: componentName
+        component: componentName,
       })
-    }
+    },
   }
 }
-
- 

@@ -181,7 +181,10 @@ export function ManualExpenseForm({
 
     participantFields.forEach((_, index) => {
       setValue(`participants.${index}.amount`, roundedAmount.toNumber())
-      setValue(`participants.${index}.percentage`, new Decimal(100).div(participantFields.length).toDecimalPlaces(1).toNumber())
+      setValue(
+        `participants.${index}.percentage`,
+        new Decimal(100).div(participantFields.length).toDecimalPlaces(1).toNumber()
+      )
     })
   }, [participantFields, watchedTotalAmount, setValue])
 

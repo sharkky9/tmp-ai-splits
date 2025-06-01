@@ -11,9 +11,9 @@ describe('SettlementSummaryView', () => {
       handleFloatingPoint: true,
       balanceValidation: true,
       complexityTarget: 'O(n²)', // For n members
-      precisionDigits: 2
+      precisionDigits: 2,
     }
-    
+
     expect(algorithmRequirements.minimizeTransactions).toBe(true)
     expect(algorithmRequirements.handleFloatingPoint).toBe(true)
     expect(algorithmRequirements.balanceValidation).toBe(true)
@@ -29,9 +29,9 @@ describe('SettlementSummaryView', () => {
       showCurrency: true,
       priorityOrdering: true,
       markAsSettledOption: true,
-      exportFunctionality: true
+      exportFunctionality: true,
     }
-    
+
     expect(displayRequirements.showPayerAndReceiver).toBe(true)
     expect(displayRequirements.showAmount).toBe(true)
     expect(displayRequirements.showCurrency).toBe(true)
@@ -48,9 +48,9 @@ describe('SettlementSummaryView', () => {
       calculateNetBalance: true,
       handleZeroBalances: true,
       maintainPrecision: true,
-      validateTotalBalance: true // Must sum to zero
+      validateTotalBalance: true, // Must sum to zero
     }
-    
+
     expect(balanceCalculation.trackPayments).toBe(true)
     expect(balanceCalculation.trackDebts).toBe(true)
     expect(balanceCalculation.calculateNetBalance).toBe(true)
@@ -67,9 +67,9 @@ describe('SettlementSummaryView', () => {
       showCompletionStatus: true,
       preventDoubleMarking: true,
       persistState: true,
-      undoCapability: false // Keep it simple
+      undoCapability: false, // Keep it simple
     }
-    
+
     expect(settlementTracking.markIndividualTransactions).toBe(true)
     expect(settlementTracking.trackProgress).toBe(true)
     expect(settlementTracking.showCompletionStatus).toBe(true)

@@ -25,7 +25,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     let mounted = true
     setIsLoading(true)
-    
+
     // Attempt to get the current session immediately
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
       if (mounted) {

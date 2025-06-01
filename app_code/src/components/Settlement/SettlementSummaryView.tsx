@@ -1,7 +1,16 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
-import { ArrowRight, Check, Copy, Mail, Calculator, Users, DollarSign, AlertCircle } from 'lucide-react'
+import {
+  ArrowRight,
+  Check,
+  Copy,
+  Mail,
+  Calculator,
+  Users,
+  DollarSign,
+  AlertCircle,
+} from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -67,7 +76,7 @@ export function SettlementSummaryView({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ groupId })
+        body: JSON.stringify({ groupId }),
       })
 
       if (!response.ok) {
