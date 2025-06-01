@@ -1,54 +1,55 @@
 import '@testing-library/jest-dom'
 import { AnalyticsEvent, getAnalytics } from '../monitoring/analytics'
 import { captureErrorWithContext, measureAsyncFunction } from '../monitoring/sentry'
-import * as Sentry from '@sentry/nextjs'
+// import * as Sentry from '@sentry/nextjs' // Sentry will be mocked
 
 jest.mock('@sentry/nextjs') // Instructs Jest to use the mock from __mocks__
 
-// Mock Sentry to prevent actual error reporting in tests
-jest.mock('@sentry/nextjs', () => ({
-  init: jest.fn(),
-  setUser: jest.fn(),
-  withScope: jest.fn((callback) => {
-    const scope = {
-      setTag: jest.fn(),
-      setUser: jest.fn(),
-      setContext: jest.fn(),
-    }
-    callback(scope)
-  }),
-  captureException: jest.fn(),
-  startSpan: jest.fn((options, callback) => {
-    if (callback) {
-      try {
-        const mockSpan = {
-          setStatus: jest.fn(),
-          finish: jest.fn(),
-        }
-        const result = callback(mockSpan)
-        if (result && typeof result.then === 'function') {
-          return result.catch((error) => {
-            throw error
-          })
-        }
-        return result
-      } catch (error) {
-        throw error
-      }
-    }
-    return {
-      setStatus: jest.fn(),
-      finish: jest.fn(),
-    }
-  }),
-  startTransaction: jest.fn(() => ({
-    setStatus: jest.fn(),
-    finish: jest.fn(),
-  })),
-  nextRouterInstrumentation: jest.fn(),
-  Replay: jest.fn(),
-  BrowserTracing: jest.fn(),
-}))
+// The detailed inline mock below is removed to favor __mocks__/@sentry/nextjs.ts
+// jest.mock('@sentry/nextjs', () => ({
+//   init: jest.fn(),
+//   setUser: jest.fn(),
+//   withScope: jest.fn((callback) => {
+//     const scope = {
+//       setTag: jest.fn(),
+//       setUser: jest.fn(),
+//       setContext: jest.fn(),
+//     }
+//     callback(scope)
+//   }),
+//   captureException: jest.fn(),
+//   setTag: jest.fn(),
+//   startSpan: jest.fn((options, callback) => {
+//     if (callback) {
+//       try {
+//         const mockSpan = {
+//           setStatus: jest.fn(),
+//           finish: jest.fn(),
+//         }
+//         const result = callback(mockSpan)
+//         if (result && typeof result.then === 'function') {
+//           return result.catch((error) => {
+//             throw error
+//           })
+//         }
+//         return result
+//       } catch (error) {
+//         throw error
+//       }
+//     }
+//     return {
+//       setStatus: jest.fn(),
+//       finish: jest.fn(),
+//     }
+//   }),
+//   startTransaction: jest.fn(() => ({
+//     setStatus: jest.fn(),
+//     finish: jest.fn(),
+//   })),
+//   nextRouterInstrumentation: jest.fn(),
+//   Replay: jest.fn(),
+//   BrowserTracing: jest.fn(),
+// }))
 
 describe('Monitoring Integration Tests', () => {
   beforeEach(() => {
