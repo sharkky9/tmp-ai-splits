@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -158,7 +158,6 @@ export function ManualExpenseForm({
   const watchedTotalAmount = watch('total_amount')
   const watchedPayers = watch('payers')
   const watchedParticipants = watch('participants')
-  const watchedIsItemized = watch('is_itemized')
 
   const getMemberOptions = () => {
     return groupMembers.map((member) => ({
@@ -168,22 +167,13 @@ export function ManualExpenseForm({
     }))
   }
 
-  const getMemberName = (userId?: string, placeholderName?: string) => {
-    if (placeholderName) return placeholderName
-    if (userId) {
-      const member = groupMembers.find((m) => m.user_id === userId)
-      return member?.profiles?.name || member?.profiles?.email || 'Unknown User'
-    }
-    return 'Unknown'
-  }
-
   // Calculate totals for validation
   const payersTotal = watchedPayers?.reduce((sum, payer) => sum + (payer.amount || 0), 0) || 0
   const participantsTotal =
     watchedParticipants?.reduce((sum, participant) => sum + (participant.amount || 0), 0) || 0
 
   // Auto-calculate equal splits
-  const handleEqualSplit = () => {
+  const handleEqualSplit = useCallback(() => {
     if (participantFields.length === 0 || !watchedTotalAmount) return
 
     const equalAmount = new Decimal(watchedTotalAmount).div(participantFields.length)
@@ -191,12 +181,9 @@ export function ManualExpenseForm({
 
     participantFields.forEach((_, index) => {
       setValue(`participants.${index}.amount`, roundedAmount.toNumber())
-      setValue(
-        `participants.${index}.percentage`,
-        new Decimal(100).div(participantFields.length).toDecimalPlaces(1).toNumber()
-      )
+      setValue(`participants.${index}.percentage`, new Decimal(100).div(participantFields.length).toDecimalPlaces(1).toNumber())
     })
-  }
+  }, [participantFields, watchedTotalAmount, setValue])
 
   // Auto-calculate from percentages
   const handlePercentageSplit = () => {
@@ -272,7 +259,7 @@ export function ManualExpenseForm({
     if (splitMethod === 'equal' && participantFields.length > 0 && watchedTotalAmount > 0) {
       handleEqualSplit()
     }
-  }, [splitMethod, participantFields.length, watchedTotalAmount])
+  }, [splitMethod, participantFields.length, watchedTotalAmount, handleEqualSplit])
 
   return (
     <Card className='w-full max-w-4xl mx-auto'>

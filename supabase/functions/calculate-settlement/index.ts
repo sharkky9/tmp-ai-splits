@@ -46,6 +46,20 @@ interface SettlementResult {
 
 /**
  * Calculate net balances for all group members based on confirmed expenses
+ * 
+ * This function processes all confirmed expenses in a group and calculates the net
+ * balance for each member. A negative balance means the member is owed money,
+ * while a positive balance means the member owes money.
+ * 
+ * @param expenses - Array of confirmed expenses with payers and participants
+ * @param groupMembers - Array of group members including both users and placeholders
+ * @returns Map of member IDs to their balance information
+ * 
+ * @example
+ * // For an expense where Alice paid $30 and it's split equally among Alice, Bob, Charlie:
+ * // Alice: paid $30, owes $10 → balance = -$20 (is owed $20)
+ * // Bob: paid $0, owes $10 → balance = +$10 (owes $10)
+ * // Charlie: paid $0, owes $10 → balance = +$10 (owes $10)
  */
 function calculateMemberBalances(expenses: Expense[], groupMembers: any[]): Map<string, MemberBalance> {
   const balances = new Map<string, MemberBalance>()
@@ -62,9 +76,10 @@ function calculateMemberBalances(expenses: Expense[], groupMembers: any[]): Map<
     })
   })
 
-  // Process each expense
+  // Process each expense to calculate net balances
   expenses.forEach(expense => {
     // Add amounts paid (negative balance = is owed money)
+    // When someone pays, they should receive money back, so we subtract from their balance
     expense.payers.forEach(payer => {
       const payerId = payer.user_id || `placeholder-${payer.placeholder_name}`
       const existing = balances.get(payerId)
@@ -74,6 +89,7 @@ function calculateMemberBalances(expenses: Expense[], groupMembers: any[]): Map<
     })
 
     // Add amounts owed (positive balance = owes money)
+    // When someone participates in an expense, they owe money, so we add to their balance
     expense.participants.forEach(participant => {
       const participantId = participant.user_id || `placeholder-${participant.placeholder_name}`
       const existing = balances.get(participantId)
@@ -87,21 +103,40 @@ function calculateMemberBalances(expenses: Expense[], groupMembers: any[]): Map<
 }
 
 /**
- * Simplify debts using a greedy algorithm to minimize transactions
- * This approach finds the member who owes the most and the member who is owed the most,
- * and creates a transaction between them, continuing until all debts are settled.
+ * Simplify debts using a greedy algorithm to minimize the number of transactions
+ * 
+ * This algorithm implements a debt simplification strategy that finds the optimal
+ * set of transactions to settle all debts with the minimum number of transfers.
+ * It uses a greedy approach where in each iteration, it finds the member who owes
+ * the most money and the member who is owed the most money, then creates a
+ * transaction between them for the maximum possible amount.
+ * 
+ * Algorithm complexity: O(n²) where n is the number of members with non-zero balances
+ * 
+ * @param memberBalances - Array of member balance information
+ * @param currency - Currency code for the transactions
+ * @returns Array of settlement transactions that will balance all debts
+ * 
+ * @example
+ * // Input balances: Alice: -$20, Bob: +$10, Charlie: +$10
+ * // Output: [
+ * //   { from: Bob, to: Alice, amount: $10 },
+ * //   { from: Charlie, to: Alice, amount: $10 }
+ * // ]
+ * // This settles all debts with 2 transactions (minimum possible)
  */
 function simplifyDebts(memberBalances: MemberBalance[], currency: string): SettlementTransaction[] {
   const transactions: SettlementTransaction[] = []
   const balances = new Map<string, number>()
   
-  // Copy balances for manipulation
+  // Copy balances for manipulation during the algorithm
   memberBalances.forEach(member => {
     balances.set(member.memberId, member.balance)
   })
 
   let transactionId = 1
 
+  // Continue until all significant debts are settled
   while (true) {
     // Find the member who owes the most (highest positive balance)
     let maxOwed = 0
@@ -111,8 +146,9 @@ function simplifyDebts(memberBalances: MemberBalance[], currency: string): Settl
     let minOwed = 0
     let minOwedMember = ''
 
+    // Scan all balances to find the extremes
     for (const [memberId, balance] of balances) {
-      if (Math.abs(balance) < 0.01) continue // Skip near-zero balances
+      if (Math.abs(balance) < 0.01) continue // Skip near-zero balances to handle floating-point precision
       
       if (balance > maxOwed) {
         maxOwed = balance
@@ -131,26 +167,27 @@ function simplifyDebts(memberBalances: MemberBalance[], currency: string): Settl
     }
 
     // Calculate settlement amount (minimum of what's owed and what's due)
+    // This ensures we don't overpay or under-receive
     const settlementAmount = Math.min(maxOwed, Math.abs(minOwed))
     
-    // Find member details
+    // Find member details for the transaction
     const fromMember = memberBalances.find(m => m.memberId === maxOwedMember)!
     const toMember = memberBalances.find(m => m.memberId === minOwedMember)!
 
-    // Create transaction
+    // Create the settlement transaction
     transactions.push({
       id: `settlement-${transactionId++}`,
       fromMemberId: maxOwedMember,
       fromMemberName: fromMember.memberName,
       toMemberId: minOwedMember,
       toMemberName: toMember.memberName,
-      amount: Math.round(settlementAmount * 100) / 100, // Round to 2 decimal places
+      amount: Math.round(settlementAmount * 100) / 100, // Round to 2 decimal places for currency precision
       currency,
       isFromPlaceholder: fromMember.isPlaceholder,
       isToPlaceholder: toMember.isPlaceholder
     })
 
-    // Update balances
+    // Update balances after the transaction
     balances.set(maxOwedMember, maxOwed - settlementAmount)
     balances.set(minOwedMember, minOwed + settlementAmount)
   }

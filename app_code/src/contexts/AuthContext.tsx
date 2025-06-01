@@ -23,24 +23,31 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
+    let mounted = true
     setIsLoading(true)
+    
     // Attempt to get the current session immediately
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
-      setSession(currentSession)
-      setUser(currentSession?.user ?? null)
-      setIsLoading(false)
+      if (mounted) {
+        setSession(currentSession)
+        setUser(currentSession?.user ?? null)
+        setIsLoading(false)
+      }
     })
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      setSession(newSession)
-      setUser(newSession?.user ?? null)
-      // Note: isLoading might be set to false here too, or after initial getSession only
-      // For simplicity, initial load handles isLoading, subsequent changes update session/user.
+      if (mounted) {
+        setSession(newSession)
+        setUser(newSession?.user ?? null)
+        // Note: isLoading might be set to false here too, or after initial getSession only
+        // For simplicity, initial load handles isLoading, subsequent changes update session/user.
+      }
     })
 
     return () => {
+      mounted = false
       subscription?.unsubscribe()
     }
   }, [])

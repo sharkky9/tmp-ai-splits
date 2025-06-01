@@ -107,24 +107,139 @@ The primary goal is to provide a **simple, intuitive, and fast** way for users t
         *   Net amounts for each participant
     *   **Edit Options:** Add/remove items, adjust splits per item
 
-#### 3.1.4. Clarifying Questions Flow (US8)
+#### 3.1.4. Expense Confirmation Card UI Patterns (`ExpenseConfirmationCard.tsx`)
+*   **Layout Structure:**
+    *   **Header Section:**
+        *   Title: "Review Expense Interpretation"
+        *   Confidence badge with color coding (green ≥80%, yellow 60-79%, red <60%)
+    *   **Side-by-Side Comparison:**
+        *   Left panel: Original input (gray background, clock icon)
+        *   Right panel: AI interpretation (blue background, checkmark icon)
+    *   **Detailed Breakdown:**
+        *   Payers section (green color scheme, credit card icon)
+        *   Participants section (orange color scheme, users icon)
+        *   LLM assumptions section (yellow warning background, alert triangle icon)
+        *   Itemized breakdown (if applicable, gray background)
+    *   **Action Button Row:**
+        *   Primary green button: "Confirm Expense" (checkmark icon)
+        *   Secondary outline button: "Edit Details" (edit icon)
+        *   Tertiary red outline button: "Discard" (X icon)
+    *   **Footer:** Timestamp with relative time display
+*   **Visual Hierarchy:**
+    *   Clear separation between sections using separators
+    *   Consistent iconography for different expense components
+    *   Color-coded amounts for easy scanning
+    *   Badge indicators for placeholder vs. confirmed members
+
+#### 3.1.5. Expense Edit Form UI Patterns (`ExpenseEditForm.tsx`)
+*   **Form Structure:**
+    *   **Basic Information Section:**
+        *   Full-width description field
+        *   Two-column layout: amount (with dollar icon) + currency dropdown
+        *   Date picker with calendar popup
+    *   **Payers Section:**
+        *   Header with "Add Payer" button
+        *   Each payer row: member dropdown + amount input + remove button
+        *   Real-time total validation with warning indicators
+    *   **Participants Section:**
+        *   Split method selector (equal/exact/percentage)
+        *   "Calculate Equal Split" / "Calculate from Percentages" buttons
+        *   Each participant row: member dropdown + percentage field (if applicable) + amount input + remove button
+        *   Visual warnings when totals don't match
+    *   **Action Buttons:**
+        *   Primary green "Save Changes" button
+        *   Secondary "Cancel" button
+*   **Validation Patterns:**
+    *   Real-time validation with red error text
+    *   Yellow warning boxes for amount mismatches
+    *   Disabled states for invalid forms
+    *   Currency formatting with proper decimal places
+
+#### 3.1.6. Clarifying Questions Flow (US8)
 *   **Trigger:** LLM uncertainty (e.g., "Groceries for some of us")
 *   **Clarification Dialog (`ClarifyingQuestionDialog.tsx`):**
-    *   **Header:** "I need clarification"
-    *   **Original Input:** Displayed prominently
-    *   **Question:** Clear, specific question from LLM
-    *   **Response Options:**
-        *   Text input for specific answers
-        *   Multiple choice buttons for common scenarios
-        *   "Use manual entry instead" option
-*   **After Response:** Return to normal confirmation flow with refined interpretation
+    *   **Header Section:**
+        *   Help icon + "Need More Information" title
+        *   Clear description of purpose
+        *   Progress indicator showing question N of total
+    *   **Content Structure:**
+        *   Original input context card (gray background, message icon)
+        *   Current question with clear typography hierarchy
+        *   Context explanation (if provided by LLM)
+    *   **Input Methods:**
+        *   Multiple choice: Radio buttons with clear labels
+        *   Text input: Full-width textarea with placeholder guidance
+        *   Confirmation: Yes/No radio buttons
+    *   **Navigation:**
+        *   "Back" button (if not first question)
+        *   "Next Question" / "Submit Answers" button
+        *   "Switch to Manual Entry" fallback option
+    *   **Visual Design:**
+        *   Progress dots at top
+        *   Tip section at bottom with light background
+        *   Consistent button styling and disabled states
 
-#### 3.1.5. LLM Failure/Fallback Flow
-*   **Error States:**
-    *   API timeout: "Taking longer than expected - would you like to try manual entry?"
-    *   Parse failure: "I couldn't understand that expense - let's use the manual form"
-    *   Confidence too low: "I'm not confident about this interpretation"
-*   **Fallback Action:** Smooth transition to `ManualExpenseForm.tsx` with input text preserved
+#### 3.1.7. Itemized Split Form UI Patterns (`ItemizedSplitForm.tsx`)
+*   **Overall Layout:**
+    *   Header with title, description, and "Add Item" button
+    *   Total summary card with color-coded validation
+    *   List of item cards with left border color indicator
+*   **Total Summary Card:**
+    *   Calculator icon + "Total Summary" label
+    *   Items total vs. expense total comparison
+    *   Green background when amounts match, red when they don't
+    *   Clear messaging for remaining/over amounts
+*   **Individual Item Cards:**
+    *   **Header:** Item number + remove button (disabled for last item)
+    *   **Details Section:** Two-column layout for description + amount (with dollar icon)
+    *   **Participant Selection:**
+        *   Checkbox grid for all group members
+        *   Placeholder badges for non-registered members
+        *   "Split Equally" button when participants are selected
+    *   **Amount Distribution:**
+        *   Individual amount inputs for each selected participant
+        *   Real-time validation warnings for mismatched totals
+    *   **Visual Styling:**
+        *   Blue left border for visual separation
+        *   Gray background for amount input rows
+        *   Consistent spacing and typography
+
+#### 3.1.8. Accessibility Patterns
+*   **Keyboard Navigation:**
+    *   All interactive elements accessible via Tab/Shift+Tab
+    *   Enter key submits forms and confirms actions
+    *   Escape key closes dialogs and cancels actions
+    *   Arrow keys navigate radio button groups
+*   **Screen Reader Support:**
+    *   Proper ARIA labels for all form controls
+    *   Role attributes for custom components (radio groups, dialogs)
+    *   Live regions for dynamic content updates (validation messages)
+    *   Descriptive button text with icon meanings
+*   **Visual Accessibility:**
+    *   High contrast color scheme meeting WCAG 2.1 AA standards
+    *   Color coding supplemented with icons and text
+    *   Consistent focus indicators for keyboard navigation
+    *   Scalable typography that works with browser zoom
+*   **Error Handling:**
+    *   Clear, actionable error messages
+    *   Error states announced to screen readers
+    *   Visual error indicators (red borders, warning icons)
+    *   Success states clearly communicated
+
+#### 3.1.9. Form Validation Patterns
+*   **Real-time Validation:**
+    *   Amount fields validate for positive numbers
+    *   Required fields show errors on blur
+    *   Split totals validate against expense totals (0.01 tolerance)
+*   **Visual Feedback:**
+    *   Red text for validation errors
+    *   Yellow background for warnings (amount mismatches)
+    *   Green indicators for successful validation
+    *   Disabled states for invalid forms
+*   **Mathematical Precision:**
+    *   All calculations use Decimal.js for precision
+    *   Proper rounding for currency display (2 decimal places)
+    *   Clear display of calculation results
 
 ### 3.2. Manual Expense Entry (US11)
 

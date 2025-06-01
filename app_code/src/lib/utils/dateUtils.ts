@@ -305,7 +305,7 @@ export function formatDateForDisplay(
       return 'Invalid date'
     }
     return format(dateObj, formatString)
-  } catch (error) {
+  } catch {
     return 'Invalid date'
   }
 }
@@ -331,7 +331,7 @@ export function formatDistanceToNowSafe(date: Date | string | number): string {
       return 'Invalid date'
     }
     return formatDistanceToNow(dateObj, { addSuffix: true })
-  } catch (error) {
+  } catch {
     return 'Invalid date'
   }
 }
@@ -409,5 +409,29 @@ export function createDateRangeValidator(minDate?: Date, maxDate?: Date) {
     if (minDate && date < minDate) return false
     if (maxDate && date > maxDate) return false
     return true
+  }
+}
+
+/**
+ * Get the relative time from now (e.g., "2 hours ago", "in 3 days")
+ */
+export const getRelativeTime = (date: Date | string): string => {
+  try {
+    const targetDate = typeof date === 'string' ? new Date(date) : date
+    return formatDistanceToNow(targetDate, { addSuffix: true })
+  } catch {
+    return 'Unknown time'
+  }
+}
+
+/**
+ * Check if a date string is valid
+ */
+export const isValidDate = (dateString: string): boolean => {
+  try {
+    const date = new Date(dateString)
+    return !isNaN(date.getTime())
+  } catch {
+    return false
   }
 }

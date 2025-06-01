@@ -1,7 +1,6 @@
-// Simple verification tests for Task 1.6 utilities
+// Testing utilities and helper functions
 import { CurrencyUtils } from '../currencyUtils'
 import { DateUtils } from '../dateUtils'
-import Decimal from 'decimal.js'
 
 describe('Utility Tests', () => {
   describe('CurrencyUtils', () => {

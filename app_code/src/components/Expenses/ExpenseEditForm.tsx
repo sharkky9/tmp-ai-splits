@@ -126,15 +126,6 @@ export function ExpenseEditForm({
     }))
   }
 
-  const getMemberName = (userId?: string, placeholderName?: string) => {
-    if (placeholderName) return placeholderName
-    if (userId) {
-      const member = groupMembers.find((m) => m.user_id === userId)
-      return member?.profiles?.name || member?.profiles?.email || 'Unknown User'
-    }
-    return 'Unknown'
-  }
-
   // Calculate totals for validation
   const payersTotal = watchedPayers?.reduce((sum, payer) => sum + (payer.amount || 0), 0) || 0
   const participantsTotal =

@@ -1,21 +1,10 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import {
-  ArrowRight,
-  Check,
-  Copy,
-  Mail,
-  Download,
-  Calculator,
-  Users,
-  DollarSign,
-  AlertCircle,
-} from 'lucide-react'
+import React, { useState, useEffect, useCallback } from 'react'
+import { ArrowRight, Check, Copy, Mail, Calculator, Users, DollarSign, AlertCircle } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { formatCurrency } from '@/lib/utils/currency'
 import { cn } from '@/lib/utils'
@@ -68,7 +57,7 @@ export function SettlementSummaryView({
   const [copiedText, setCopiedText] = useState('')
 
   // Fetch settlement data
-  const fetchSettlementData = async () => {
+  const fetchSettlementData = useCallback(async () => {
     setIsLoading(true)
     setError(null)
 
@@ -78,7 +67,7 @@ export function SettlementSummaryView({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ groupId }),
+        body: JSON.stringify({ groupId })
       })
 
       if (!response.ok) {
@@ -93,11 +82,11 @@ export function SettlementSummaryView({
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [groupId])
 
   useEffect(() => {
     fetchSettlementData()
-  }, [groupId])
+  }, [fetchSettlementData])
 
   // Mark transaction as settled
   const handleMarkAsSettled = (transactionId: string) => {
@@ -353,7 +342,7 @@ export function SettlementSummaryView({
           </CardHeader>
           <CardContent>
             <div className='space-y-3'>
-              {completedTransactions.map((transaction, index) => (
+              {completedTransactions.map((transaction) => (
                 <div
                   key={transaction.id}
                   className='flex items-center justify-between p-4 border border-green-200 bg-green-50 rounded-lg'

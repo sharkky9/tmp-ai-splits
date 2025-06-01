@@ -202,26 +202,227 @@ The application is a web-based platform built on a Next.js frontend and a Supaba
 
 *   **Real-time Tracking:**
     *   LLM correction rates (target: <20%)
-    *   Expense logging completion times
-    *   Clarification question frequency
-*   **Batch Processing:**
-    *   Daily/weekly metric aggregation
-    *   User satisfaction surveys (NPS/CSAT)
-    *   Settlement completion rates
-*   **Data Storage:** 
-    *   `AnalyticsEvents` table for raw events
-    *   Aggregated metrics in separate analytics database (future)
+    *   Expense logging completion times (target: <30s)
+    *   User satisfaction scores
+    *   Settlement calculation performance
+*   **Implementation:**
+    *   Custom analytics hooks and context providers
+    *   Event tracking in `AnalyticsEvents` table
+    *   Aggregation queries for dashboard metrics
+*   **Performance Thresholds:**
+    *   Expense logging: 30 seconds maximum
+    *   Settlement calculation: 5 seconds maximum
+    *   LLM response time: 10 seconds timeout
 
-## 10. Deployment Architecture
+## 10. Performance Monitoring Architecture
 
-*   **Frontend (Next.js):** Vercel with environment-specific configurations
-*   **Backend (Supabase):** Supabase Cloud with production/staging environments
-*   **Monitoring:** Vercel Analytics + Supabase built-in monitoring
-*   **Secrets Management:** Environment variables for API keys and configurations
+*   **Monitoring System (`lib/monitoring/performance.ts`):**
+    *   Expense logging session tracking with correction rate metrics
+    *   Settlement calculation performance measurement
+    *   Success criteria validation (< 30s expense logging, < 20% correction rate, > 90% success rate)
+    *   Memory management with automatic metric rotation (1000 metric limit)
+    *   Execution time measurement utilities for sync/async functions
+*   **React Integration:**
+    *   Custom hooks for component performance tracking
+    *   Real-time metric collection during user interactions
+    *   Performance validation with requirement checking
+*   **Success Metrics Validation:**
+    *   Automated validation against defined thresholds
+    *   Issue identification and reporting for failed requirements
+    *   Export functionality for external analysis and monitoring dashboards
 
-## 11. Scalability Considerations
+## 11. Production Deployment Architecture
 
-*   **Database:** Indexed foreign keys, optimized queries, connection pooling
-*   **LLM API:** Rate limiting, cost optimization, caching frequent interpretations
-*   **Frontend:** Code splitting, lazy loading, CDN optimization
-*   **Future:** Horizontal scaling of Edge Functions, read replicas for analytics
+*   **Frontend Deployment (Vercel):**
+    *   Automatic deployments from main branch
+    *   Preview deployments for pull requests
+    *   Environment variable management for different stages
+    *   Bundle optimization with code splitting (101KB shared, 203KB max route)
+*   **Backend Deployment (Supabase):**
+    *   Edge Functions deployment with Deno runtime
+    *   Environment-specific configuration (development/production)
+    *   Database migrations and RLS policy management
+*   **Monitoring & Observability:**
+    *   Performance monitoring system for success metrics tracking
+    *   Error tracking and alerting
+    *   Health checks for API connectivity (OpenAI, database)
+    *   Bundle analysis and performance optimization
+*   **Security Configuration:**
+    *   CORS settings for cross-origin requests
+    *   API rate limiting (OpenAI: 10 requests/min/user, Settlement: 5 requests/min/group)
+    *   Data validation and sanitization (XSS protection)
+    *   Row Level Security (RLS) policy enforcement
+
+## Settlement Calculation System
+
+### Debt Simplification Algorithm
+
+The settlement calculation system uses a **greedy debt simplification algorithm** to minimize the number of transactions required to settle all debts within a group.
+
+#### Algorithm Overview
+
+1. **Balance Calculation**: For each group member, calculate their net balance by subtracting total owed from total paid
+   - Positive balance = member is owed money  
+   - Negative balance = member owes money
+   - Zero balance = member is even
+
+2. **Greedy Optimization**: Iteratively find the member who owes the most and the member who is owed the most, then create a transaction between them for the minimum of these amounts
+
+3. **Transaction Generation**: Continue until all significant debts (> $0.01) are resolved
+
+#### Implementation Details
+
+**Edge Function**: `supabase/functions/calculate-settlement/index.ts`
+- Fetches confirmed expenses and group members from database
+- Calculates net balances using precise decimal arithmetic
+- Generates optimized settlement transactions with minimum count
+- Handles edge cases: zero balances, floating-point precision, placeholder members
+
+**API Response**: Returns settlement result with:
+- Array of settlement transactions (from member → to member + amount)
+- Member balance summaries (total paid, total owed, net balance)
+- Total settlement amount and transaction count
+- Currency and metadata
+
+#### Mathematical Properties
+
+- **Optimality**: Produces minimum number of transactions for any debt configuration
+- **Precision**: Uses decimal arithmetic to prevent floating-point errors  
+- **Completeness**: Resolves all debts to within $0.01 precision
+- **Efficiency**: O(n²) time complexity where n = number of group members
+
+#### Integration Points
+
+- **SettlementSummaryView**: Displays transactions with member tracking
+- **GroupLedgerView**: Shows member balances and financial history
+- **Database**: Works with confirmed expenses only for accurate settlements
+
+## Performance Monitoring and Analytics
+
+### Performance Monitoring System
+
+The application includes a comprehensive performance monitoring system to track success metrics and ensure optimal user experience:
+
+#### Key Metrics Tracked
+- **Expense Logging Time**: Target < 30 seconds per expense
+- **LLM Correction Rate**: Target < 20% of LLM-parsed expenses requiring correction
+- **Success Rate**: Target > 90% successful expense completions
+- **Settlement Calculation Time**: Target < 5 seconds for debt simplification
+
+#### Monitoring Components
+- **PerformanceMonitor Class**: Central monitoring system with session tracking
+- **Execution Time Measurement**: Utilities for measuring sync/async function performance
+- **React Performance Hooks**: Component render time tracking
+- **Memory Management**: Automatic metric rotation to prevent memory leaks
+
+#### Success Metrics Validation
+```typescript
+interface SuccessMetrics {
+  averageExpenseLoggingTime: number
+  correctionRate: number
+  successRate: number
+  averageSettlementTime: number
+  totalExpensesLogged: number
+  totalSettlementsCalculated: number
+}
+```
+
+### Deployment Architecture
+
+#### Production Environment
+- **Platform**: Vercel for Next.js application hosting
+- **Database**: Supabase PostgreSQL with Row Level Security
+- **Edge Functions**: Supabase Edge Runtime for LLM processing and settlement calculations
+- **CDN**: Vercel Edge Network for global content delivery
+
+#### Environment Configuration
+- **Development**: Local environment with `.env.local` configuration
+- **Production**: Vercel environment variables with secure API keys
+- **Database**: Supabase project with production-grade security policies
+
+#### Performance Optimizations
+- **Bundle Splitting**: Route-based code splitting (101KB shared, 203KB max route)
+- **Caching Strategy**: React Query with 5-minute stale time for group data
+- **Database Indexing**: Optimized indexes for group member lookups and expense queries
+- **Edge Function Optimization**: Minimized cold start times with shared utilities
+
+#### Security Configuration
+- **CORS**: Configured for production domain restrictions
+- **RLS Policies**: Database-level security for multi-tenant data isolation
+- **API Rate Limiting**: Protection against abuse for OpenAI and settlement endpoints
+- **Input Validation**: Zod schemas for type-safe data validation
+
+#### Monitoring and Observability
+- **Performance Metrics**: Real-time tracking of user interaction times
+- **Error Monitoring**: Comprehensive error handling and logging
+- **Health Checks**: API endpoints for system health validation
+- **Analytics**: User behavior tracking for optimization insights
+
+## Integration Testing Strategy
+
+### End-to-End Test Coverage
+- **Complete User Journey**: Account creation → Group management → Expense logging → Settlement
+- **Component Integration**: Data structure validation and component interaction testing
+- **Performance Testing**: Large dataset handling and concurrent user simulation
+- **Edge Case Handling**: Error scenarios, network failures, and data inconsistencies
+
+### Test Categories
+1. **Utility Tests (12)**: Core financial calculations and date utilities
+2. **Integration Tests (8)**: Complete workflow simulation and data validation
+3. **Performance Tests (12)**: Monitoring system validation and execution time measurement
+
+### Validation Criteria
+- **Build Success**: TypeScript compilation and linting without errors
+- **Test Coverage**: 32/32 core tests passing with comprehensive scenarios
+- **Performance Requirements**: All success metrics within target thresholds
+- **Code Quality**: Strict TypeScript compliance and consistent formatting
+
+## Data Model Extensions
+
+### Performance Metrics Schema
+```typescript
+interface PerformanceMetric {
+  name: string
+  value: number
+  timestamp: Date
+  metadata?: Record<string, unknown>
+}
+```
+
+### Settlement Data Structures
+```typescript
+interface SettlementTransaction {
+  id: string
+  fromMemberId: string
+  fromMemberName: string
+  toMemberId: string
+  toMemberName: string
+  amount: number
+  currency: string
+  isFromPlaceholder: boolean
+  isToPlaceholder: boolean
+  isSettled?: boolean
+}
+```
+
+## Technology Stack Updates
+
+### Production Dependencies
+- **Performance Monitoring**: Custom TypeScript monitoring system
+- **Financial Calculations**: Decimal.js for precise arithmetic
+- **Date Handling**: date-fns for comprehensive date utilities
+- **Testing Framework**: Jest with comprehensive integration test suite
+
+### Development Tools
+- **Build Optimization**: Next.js 15.3.3 with automatic code splitting
+- **Type Safety**: Strict TypeScript configuration with no-explicit-any rules
+- **Code Quality**: ESLint with comprehensive rules and Prettier formatting
+- **Performance Analysis**: Built-in monitoring and metrics validation
+
+### Deployment Infrastructure
+- **CI/CD**: Vercel automatic deployment on git push
+- **Environment Management**: Secure environment variable handling
+- **Database Migrations**: Supabase CLI for schema management
+- **Edge Functions**: Supabase Edge Runtime for serverless compute
+
+This architecture provides a robust, scalable foundation for the LLM-powered expense splitting application with comprehensive monitoring, testing, and deployment capabilities.

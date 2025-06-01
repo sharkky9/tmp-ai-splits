@@ -6,19 +6,27 @@ import Decimal from 'decimal.js'
  * @param currency - The currency code (default: 'USD')
  * @returns Formatted currency string
  */
-export function formatCurrency(amount: number, currency: string = 'USD'): string {
-  const decimal = new Decimal(amount)
-
+export const formatCurrency = (amount: number, currencyCode: string = 'USD'): string => {
   try {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: currency.toUpperCase(),
+      currency: currencyCode.toUpperCase(),
       minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(decimal.toNumber())
-  } catch (error) {
-    // Fallback for invalid currency codes
-    return `${currency.toUpperCase()} ${decimal.toFixed(2)}`
+      maximumFractionDigits: 2
+    }).format(amount)
+  } catch {
+    // Fallback to basic formatting with currency symbol
+    const symbols: Record<string, string> = {
+      'USD': '$',
+      'EUR': '€', 
+      'GBP': '£',
+      'CAD': 'C$',
+      'AUD': 'A$',
+      'JPY': '¥'
+    }
+    
+    const symbol = symbols[currencyCode.toUpperCase()] || currencyCode.toUpperCase()
+    return `${symbol}${amount.toFixed(2)}`
   }
 }
 
