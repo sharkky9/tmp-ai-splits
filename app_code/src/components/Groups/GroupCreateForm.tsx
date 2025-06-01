@@ -48,7 +48,7 @@ export function GroupCreateForm({ onSuccess, onCancel }: GroupCreateFormProps) {
         throw new Error('User not authenticated')
       }
 
-      // Create the group
+      // Create the group - the trigger will automatically add creator as admin member
       const { data: groupData, error: groupError } = await supabase
         .from('groups')
         .insert({
@@ -61,20 +61,6 @@ export function GroupCreateForm({ onSuccess, onCancel }: GroupCreateFormProps) {
 
       if (groupError) {
         throw groupError
-      }
-
-      // Add the creator as an admin member
-      const { error: memberError } = await supabase.from('group_members').insert({
-        group_id: groupData.id,
-        user_id: user.id,
-        is_placeholder: false,
-        role: 'admin',
-      })
-
-      if (memberError) {
-        // If member creation fails, we should clean up the group
-        await supabase.from('groups').delete().eq('id', groupData.id)
-        throw memberError
       }
 
       return groupData

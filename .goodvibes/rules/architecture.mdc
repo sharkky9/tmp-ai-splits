@@ -242,6 +242,20 @@ The application is a web-based platform built on a Next.js frontend and a Supaba
     *   Edge Functions deployment with Deno runtime
     *   Environment-specific configuration (development/production)
     *   Database migrations and RLS policy management
+*   **CI/CD Pipeline (GitHub Actions):**
+    *   Workflow defined in `.github/workflows/deploy.yml`.
+    *   Triggers on push to `main` (production deployment) and pull requests to `main` (preview deployment).
+    *   Pipeline Stages:
+        *   Checkout code
+        *   Setup Node.js and pnpm
+        *   Install dependencies (`app_code` directory)
+        *   Lint check (`pnpm run lint` in `app_code`)
+        *   Run tests (`pnpm run test --ci --coverage` in `app_code`)
+        *   Build Next.js app (`pnpm run build` in `app_code`, includes type checking)
+        *   Security Scan (`pnpm audit --prod` in `app_code`)
+        *   Deploy to Vercel (using `amondnet/vercel-action@v20` or similar)
+    *   Secrets Management: Uses GitHub Actions secrets for Vercel tokens, Supabase keys, Sentry keys, etc.
+    *   Branching Strategy: `main` branch for production, PRs to `main` for previews.
 *   **Monitoring & Observability:**
     *   Performance monitoring system for success metrics tracking
     *   Error tracking and alerting
@@ -426,3 +440,64 @@ interface SettlementTransaction {
 - **Edge Functions**: Supabase Edge Runtime for serverless compute
 
 This architecture provides a robust, scalable foundation for the LLM-powered expense splitting application with comprehensive monitoring, testing, and deployment capabilities.
+
+## 6. Production Database Architecture
+
+*   **Production Environment:**
+    *   Separate Supabase production project (jfefqebpxeynqgwqqmuv.supabase.co)
+    *   All database migrations applied and synchronized with local development
+    *   Row Level Security (RLS) policies active for all tables
+    *   Connection pooling and optimization settings configured
+
+*   **Performance Optimization:**
+    *   **Comprehensive Indexing Strategy:**
+        *   Primary indexes on high-traffic queries (groups by creator, expenses by group+date)
+        *   Composite indexes for complex filtering (expenses with multiple criteria)
+        *   Partial indexes for status-based queries (confirmed/pending expenses)
+        *   GIN indexes for JSONB columns (payers, participants, items)
+        *   Profile indexes for user lookups and authentication flows
+    *   **Query Optimization:**
+        *   Regular ANALYZE updates for query planner optimization
+        *   Index monitoring and performance tracking
+        *   Optimized for expense dashboard views, settlement calculations, and group membership checks
+
+*   **Edge Function Deployment Patterns:**
+    *   **Production Deployment:** Both `parse-expense` and `calculate-settlement` functions deployed to Supabase Edge
+    *   **Environment Management:** OpenAI API key configured as Supabase secret for secure access
+    *   **Function Status:** All functions in ACTIVE status and responsive to production requests
+    *   **Dependency Management:** Automatic bundling and optimization for fast cold starts
+    *   **Error Handling:** Proper error boundaries and logging for production debugging
+
+## 7. Monitoring and Error Tracking Architecture
+
+*   **Error Tracking (Sentry Integration):**
+    *   **Next.js Configuration:** Sentry wrapped with comprehensive webpack plugin options
+    *   **Custom Error Capture:** Context-aware error tracking with component, action, and user identification
+    *   **Performance Monitoring:** Transaction tracking with 10% production sampling rate
+    *   **Session Replay:** Error reproduction with privacy-conscious masking and blocking
+    *   **Data Privacy:** Automatic scrubbing of sensitive user information
+
+*   **React Error Boundaries:**
+    *   **Global Error Boundary:** Application-wide error capture with fallback UI
+    *   **Component-Specific Boundaries:** Specialized error handling for expense, group, and settlement features
+    *   **Error Recovery:** User-friendly retry mechanisms and graceful degradation
+    *   **Development Support:** Technical error details in development environment
+
+*   **Analytics and User Journey Tracking:**
+    *   **Event Tracking:** Comprehensive tracking of user actions (auth, groups, expenses, settlements)
+    *   **Business Metrics:** Automated calculation of correction rates, success rates, and performance metrics
+    *   **User Journey Analysis:** Session-based tracking with privacy-conscious data collection
+    *   **Integration Support:** Vercel Analytics integration with custom analytics endpoints
+
+*   **Performance Monitoring:**
+    *   **Core Web Vitals:** Automated tracking of CLS, FCP, FID, LCP, and TTFB metrics
+    *   **API Performance:** Response time tracking for database and Edge Function calls
+    *   **Page Performance:** Load time, DOM content loaded, and time-to-first-byte monitoring
+    *   **Custom Metrics:** Expense logging times, settlement calculation performance, LLM response times
+
+*   **Production Monitoring Strategy:**
+    *   **Error Rates:** Target <1% error rate with automatic alerting
+    *   **Performance Thresholds:** Page load times <3s, API responses <500ms
+    *   **LLM Monitoring:** Success rate tracking, confidence score analysis, correction rate monitoring
+    *   **User Experience:** Session replay for critical error investigation
+    *   **Privacy Compliance:** Data scrubbing and anonymization for sensitive information

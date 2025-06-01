@@ -1,0 +1,380 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Implementation Plan: Production Deployment
+
+**Goal:** Deploy the completed LLM Expense Splitting Application to both local development and Vercel production environments with comprehensive monitoring, security, CI/CD pipeline, and performance optimization for prototype-scale usage (<1000 users).
+
+## Implementation Context
+
+### User & Functional Perspective
+- **Problem Solved:** Enable live testing and user access to the completed expense splitting application with production-grade reliability and monitoring.
+- **Key Workflows:** Automated deployment from git pushes, environment-specific configuration management, performance monitoring, and error tracking.
+- **Core Capabilities:** Local development environment, staging deployment, production deployment with monitoring, automated CI/CD pipeline, and comprehensive error tracking.
+
+### Technical Implementation
+- **Architecture Fit:** Builds upon the existing completed application with production infrastructure, monitoring, and deployment automation.
+- **Affected Components:** Environment configuration, database setup, Edge Functions deployment, frontend deployment, monitoring integration.
+- **Infrastructure:** Vercel for frontend/API routes, Supabase for database/Edge Functions, Sentry for error monitoring, GitHub Actions for CI/CD.
+
+### Boundaries & Constraints
+- **Out of Scope:** Feature changes to the application code, major architectural modifications, enterprise-scale infrastructure.
+- **Limitations:** Prototype scale (<1000 users), free/starter tiers for monitoring services, standard security policies.
+- **Unchanged Functionality:** All existing application features and user workflows remain identical.
+
+## Relevant Files
+
+- `.env.local` - **NEW** - Local development environment variables
+- `.env.example` - **NEW** - Template for environment variable setup
+- `vercel.json` - **NEW** - Vercel deployment configuration
+- `.github/workflows/deploy.yml` - **NEW** - CI/CD pipeline configuration
+- `next.config.ts` - **MODIFY** - Add Sentry and performance monitoring configuration
+- `app_code/src/lib/monitoring/sentry.ts` - **NEW** - Sentry error tracking configuration
+- `app_code/src/lib/monitoring/analytics.ts` - **MODIFY** - Enhanced analytics with production tracking
+- `supabase/config.toml` - **MODIFY** - Production environment configuration
+- `README.md` - **MODIFY** - Add deployment and setup instructions
+- `package.json` - **MODIFY** - Add deployment scripts and monitoring dependencies
+
+## Core Documents Affected
+
+- `architecture.mdc` - Update with production deployment architecture and monitoring patterns (Step 2)
+- `tech-stack.mdc` - Add deployment tools, monitoring services, and CI/CD tooling (Step 1)
+- `design.mdc` - No changes needed for deployment
+
+## Success Metrics
+- **Deployment Success**: Both local and production environments fully functional
+- **Performance**: Page load times < 2 seconds, API response times < 500ms
+- **Monitoring Coverage**: 100% error capture, performance metrics tracking active
+- **Uptime**: 99.9% availability target for production deployment
+- **Security**: All environment variables secured, RLS policies active
+- **CI/CD**: Automated deployments working with <5 minute deploy time
+
+## Step 0: Test Scaffolding and Verification
+*   **Goal:** Verify the current application state and create deployment verification tests.
+*   **Actions:**
+    1.  **Current State Verification:** Run full test suite to confirm 47/47 tests passing
+    2.  **Build Verification:** Ensure production build succeeds without errors
+    3.  **Environment Test Stubs:** Create deployment verification tests in `src/lib/__tests__/deployment.test.ts`:
+        *   `test_local_environment_variables_loaded()`
+        *   `test_production_build_succeeds()`
+        *   `test_database_connectivity_local()`
+        *   `test_database_connectivity_production()`
+        *   `test_edge_functions_accessible()`
+        *   `test_monitoring_integration_active()`
+        *   `test_error_tracking_functional()`
+*   **Validation:**
+    *   All existing tests pass (47/47)
+    *   Production build completes successfully
+    *   New deployment test stubs are failing (as expected)
+*   **Risks:**
+    *   Recent changes might have introduced regressions not caught by existing tests
+    *   Build configuration might have environment-specific issues
+*   **Core Document Updates:** None for this step.
+*   **Progress:** ✅ Completed
+
+## Step 1: Development Environment Setup and Service Account Creation
+*   **Goal:** Set up local development environment, create required service accounts, and configure deployment tooling.
+*   **Actions:**
+    1.  **Create Environment Template:** Create `.env.example` with all required variables documented
+    2.  **Local Environment Setup:** Create `.env.local` with development configuration:
+        *   Supabase URL and keys (existing)
+        *   OpenAI API key (existing)
+        *   Local app URL and development flags
+    3.  **Service Account Creation:**
+        *   Create Vercel account at https://vercel.com
+        *   Set up Sentry account at https://sentry.io (free tier)
+        *   Generate Vercel API token for CI/CD
+        *   Create Sentry project and get DSN
+    4.  **Install Deployment Tools:**
+        *   Install Vercel CLI: `npm i -g vercel`
+        *   Add Sentry dependencies: `@sentry/nextjs`, `@sentry/integrations`
+        *   Add deployment scripts to package.json
+    5.  **Test:** Create unit test for environment variable loading and service connectivity
+*   **Validation:**
+    *   `.env.example` template created with comprehensive documentation
+    *   Local environment variables properly loaded and functional
+    *   All service accounts created and accessible
+    *   Deployment tools installed and authenticated
+    *   Environment loading test passes
+*   **Risks:**
+    *   Vercel account creation might require payment method for production features
+    *   Sentry free tier limits might be insufficient for prototype usage
+    *   Environment variable exposure in CI/CD configuration
+*   **Core Document Updates:** `tech-stack.mdc` (add Vercel, Sentry, deployment tooling).
+*   **Progress:** ✅ Completed
+
+## Step 2: Production Database and Edge Functions Setup
+*   **Goal:** Configure Supabase for production use, deploy Edge Functions, and set up database optimizations.
+*   **Actions:**
+    1.  **Production Database Configuration:**
+        *   Create production Supabase project (separate from development)
+        *   Apply all database migrations to production
+        *   Configure RLS policies for production security
+        *   Create database indexes for performance optimization
+    2.  **Edge Functions Deployment:**
+        *   Deploy `parse-expense` function to production Supabase
+        *   Deploy `calculate-settlement` function to production Supabase
+        *   Configure environment variables for Edge Functions (OpenAI API key)
+        *   Test Edge Functions in production environment
+    3.  **Database Performance Optimization:**
+        *   Create performance indexes as specified in DEPLOYMENT.md
+        *   Configure connection pooling settings
+        *   Set up database monitoring and alerting
+    4.  **Security Configuration:**
+        *   Verify RLS policies are active and correct
+        *   Configure CORS settings for production domain
+        *   Set up API rate limiting for Edge Functions
+    5.  **Test:** Update deployment tests to verify production database connectivity and Edge Function accessibility
+*   **Validation:**
+    *   Production Supabase project configured and migrations applied
+    *   Both Edge Functions deployed and responsive in production
+    *   Database performance indexes created and active
+    *   RLS policies verified and securing data appropriately
+    *   Production database connectivity test passes
+*   **Risks:**
+    *   Production database setup might expose sensitive data if RLS policies are misconfigured
+    *   Edge Function deployment might fail due to dependency issues or environment mismatches
+    *   Database performance might degrade if indexes are not properly optimized
+*   **Core Document Updates:** `architecture.mdc` (document production database architecture and Edge Function deployment patterns).
+*   **Progress:** ✅ Completed
+
+## Step 3: Monitoring and Error Tracking Integration
+*   **Goal:** Integrate Sentry error tracking, set up performance monitoring, and configure analytics for production use.
+*   **Actions:**
+    1.  **Sentry Integration:**
+        *   Configure Sentry in `next.config.ts` with DSN and environment settings
+        *   Create `src/lib/monitoring/sentry.ts` with error boundary and performance tracking
+        *   Add Sentry middleware for API route error capture
+        *   Configure user context and custom error tags
+    2.  **Enhanced Performance Monitoring:**
+        *   Update `src/lib/monitoring/performance.ts` with production metrics
+        *   Add Vercel Analytics integration
+        *   Configure Core Web Vitals tracking
+        *   Set up custom performance alerts and thresholds
+    3.  **Analytics Enhancement:**
+        *   Update `src/lib/monitoring/analytics.ts` with production event tracking
+        *   Add user journey tracking for key workflows
+        *   Configure success metrics collection (expense logging, correction rates)
+        *   Set up dashboard for real-time metrics viewing
+    4.  **Error Boundaries:**
+        *   Add React Error Boundaries for component-level error capture
+        *   Configure fallback UI components for error states
+        *   Integrate with Sentry for automatic error reporting
+    5.  **Test:** Create tests for error tracking, performance monitoring, and analytics integration
+*   **Validation:**
+    *   Sentry capturing and reporting errors correctly
+    *   Performance metrics being tracked and reported
+    *   Analytics events being captured for user actions
+    *   Error boundaries functioning with proper fallback UI
+    *   Monitoring integration tests passing
+*   **Risks:**
+    *   Sentry integration might impact application performance if not configured properly
+    *   Over-aggressive error tracking could capture sensitive user data
+    *   Performance monitoring overhead might affect user experience
+*   **Core Document Updates:** `architecture.mdc` (add monitoring and error tracking architecture), `tech-stack.mdc` (document monitoring tools and configuration).
+*   **Progress:** ✅ Completed
+
+## Step 4: Vercel Deployment Configuration
+*   **Goal:** Configure Vercel deployment settings, environment variables, and custom domain setup.
+*   **Actions:**
+    1.  **Vercel Configuration:**
+        *   Create `vercel.json` with build settings, redirects, and environment configuration
+        *   Configure build commands and output directory settings
+        *   Set up custom headers for security and performance
+        *   Configure serverless function settings for API routes
+    2.  **Environment Variable Configuration:**
+        *   Add all production environment variables to Vercel dashboard
+        *   Configure environment-specific variables for staging and production
+        *   Secure sensitive keys (OpenAI API, Supabase service role)
+        *   Set up preview deployment environment variables
+    3.  **Domain and SSL Setup:**
+        *   Configure custom domain (if available) or use Vercel subdomain
+        *   Verify SSL certificate generation and HTTPS enforcement
+        *   Set up domain redirects and canonical URL configuration
+        *   Configure CORS settings for production domain
+    4.  **Performance Optimization:**
+        *   Configure edge caching for static assets
+        *   Set up optimal image optimization settings
+        *   Configure compression and minification settings
+        *   Enable Edge Functions for optimal performance
+    5.  **Test:** Create deployment verification test and manual deployment test
+*   **Validation:**
+    *   Vercel project configured and linked to repository
+    *   All environment variables properly set and secured
+    *   Domain and SSL configuration working correctly
+    *   Performance optimizations active and effective
+    *   Manual deployment test successful
+*   **Risks:**
+    *   Environment variable exposure during deployment process
+    *   Domain configuration issues causing accessibility problems
+    *   Performance optimization settings causing compatibility issues
+*   **Core Document Updates:** `tech-stack.mdc` (document Vercel configuration and optimization settings).
+*   **Progress:** ✅ Completed
+
+## Step 5: CI/CD Pipeline Implementation
+*   **Goal:** Implement automated deployment pipeline with GitHub Actions for continuous integration and deployment.
+*   **Actions:**
+    1.  **GitHub Actions Workflow:**
+        *   Create `.github/workflows/deploy.yml` with comprehensive CI/CD pipeline
+        *   Configure workflow triggers (push to main, pull requests)
+        *   Set up environment-specific deployment jobs (staging, production)
+        *   Add workflow permissions and security settings
+    2.  **CI/CD Pipeline Stages:**
+        *   **Lint and Type Check:** ESLint, TypeScript compilation, Prettier formatting
+        *   **Test Execution:** Full test suite execution with coverage reporting
+        *   **Build Verification:** Production build test and bundle analysis
+        *   **Security Scanning:** Dependency vulnerability scanning
+        *   **Deployment:** Automated deployment to Vercel with environment promotion
+    3.  **Environment Management:**
+        *   Configure GitHub secrets for API keys and tokens
+        *   Set up branch-based deployment strategy (main → production, develop → staging)
+        *   Configure deployment notifications and status reporting
+        *   Add manual approval gates for production deployments
+    4.  **Deployment Verification:**
+        *   Add post-deployment health checks and smoke tests
+        *   Configure rollback procedures for failed deployments
+        *   Set up deployment monitoring and alerting
+        *   Add deployment status reporting to Slack/Discord (optional)
+    5.  **Test:** Create CI/CD pipeline tests and validate workflow execution
+*   **Validation:**
+    *   GitHub Actions workflow created and functional
+    *   All pipeline stages executing successfully
+    *   Automated deployments working for both staging and production
+    *   Deployment verification and health checks functioning
+    *   CI/CD pipeline tests passing
+*   **Risks:**
+    *   GitHub Actions workflow might fail due to dependency or environment issues
+    *   Automated deployments could deploy broken code if tests are insufficient
+    *   Secret management in GitHub Actions might expose sensitive credentials
+*   **Core Document Updates:** `architecture.mdc` (document CI/CD pipeline architecture and deployment flow).
+*   **Progress:** ✅ Completed (GitHub Actions workflow file created; successful execution to be validated by user by pushing to GitHub)
+
+## Step 6: Production Deployment and Testing
+*   **Goal:** Execute full production deployment, comprehensive testing, and performance validation.
+*   **Actions:**
+    1.  **Initial Production Deployment:**
+        *   Execute first production deployment via Vercel CLI
+        *   Verify all services are accessible and functional
+        *   Test database connectivity and Edge Function execution
+        *   Validate environment variable configuration and security settings
+    2.  **End-to-End Testing:**
+        *   Execute comprehensive user journey testing in production
+        *   Test all major workflows: user registration, group creation, expense logging, settlement calculation
+        *   Verify LLM integration working with production OpenAI API limits
+        *   Test error handling and fallback mechanisms
+    3.  **Performance Validation:**
+        *   Measure and validate performance metrics against success criteria
+        *   Test page load times, API response times, and database query performance
+        *   Validate Core Web Vitals and Lighthouse scores
+        *   Test application performance under simulated load
+    4.  **Security Verification:**
+        *   Verify all security headers and CORS settings
+        *   Test RLS policies with different user scenarios
+        *   Validate API rate limiting and abuse prevention
+        *   Conduct basic security scanning and vulnerability assessment
+    5.  **Monitoring Validation:**
+        *   Verify error tracking is capturing and reporting correctly
+        *   Test performance monitoring and alerting
+        *   Validate analytics tracking for user interactions
+        *   Confirm monitoring dashboards are functional and accessible
+    6.  **Test:** Update all deployment tests to pass with production environment
+*   **Validation:**
+    *   Production deployment successful and fully functional
+    *   All end-to-end user workflows working correctly
+    *   Performance metrics meeting or exceeding success criteria
+    *   Security measures active and protecting application appropriately
+    *   Monitoring systems capturing and reporting accurate data
+    *   All deployment verification tests passing
+*   **Risks:**
+    *   Production deployment might expose unexpected environment-specific issues
+    *   Performance in production might differ significantly from local development
+    *   Security vulnerabilities might only be apparent in production configuration
+*   **Core Document Updates:** `architecture.mdc` (finalize production architecture documentation).
+*   **Progress:** Not Started
+
+## Step 7: Documentation and Handoff
+*   **Goal:** Complete deployment documentation, create operational runbooks, and prepare for ongoing maintenance.
+*   **Actions:**
+    1.  **Deployment Documentation:**
+        *   Update DEPLOYMENT.md with actual production URLs and configuration
+        *   Create comprehensive setup guide for new developers
+        *   Document troubleshooting procedures and common issues
+        *   Add monitoring and alerting documentation
+    2.  **Operational Runbooks:**
+        *   Create incident response procedures
+        *   Document rollback and recovery procedures
+        *   Create monitoring and alerting runbooks
+        *   Add performance optimization and scaling guidance
+    3.  **README and Project Documentation:**
+        *   Update README.md with deployment status and production URLs
+        *   Add badges for build status, deployment status, and test coverage
+        *   Create user guides for accessing and using the production application
+        *   Document API endpoints and integration guides
+    4.  **Handoff and Training:**
+        *   Create video walkthrough of deployment process
+        *   Document ongoing maintenance procedures
+        *   Set up access and permissions for team members
+        *   Create escalation procedures for production issues
+    5.  **Knowledge Transfer:**
+        *   Document architectural decisions and trade-offs
+        *   Create troubleshooting guides for common deployment issues
+        *   Document monitoring and alerting configuration
+        *   Add contact information and support channels
+*   **Validation:**
+    *   All documentation updated and comprehensive
+    *   Operational runbooks created and accessible
+    *   README reflects current production status
+    *   Handoff materials complete and usable
+    *   Knowledge transfer documentation comprehensive
+*   **Risks:**
+    *   Documentation might become outdated quickly without proper maintenance
+    *   Runbooks might be insufficient for complex production issues
+    *   Knowledge transfer might be incomplete for critical operational procedures
+*   **Core Document Updates:** All core documents finalized with production deployment information.
+*   **Progress:** Not Started
+
+## Step 8: Cleanup and Final Validation
+*   **Goal:** Ensure deployment infrastructure is clean, optimized, and production-ready with all temporary artifacts removed.
+*   **Actions:**
+    1.  **Infrastructure Cleanup:**
+        *   Remove any temporary development/staging resources
+        *   Clean up unused environment variables and secrets
+        *   Optimize resource allocation and cost management
+        *   Remove development-only monitoring and debugging tools
+    2.  **Security Hardening:**
+        *   Final security review of all production configurations
+        *   Validate all secrets and API keys are properly secured
+        *   Review and tighten access permissions and policies
+        *   Conduct final vulnerability scan and penetration testing
+    3.  **Performance Optimization:**
+        *   Final performance tuning based on production metrics
+        *   Optimize database queries and connection pooling
+        *   Fine-tune caching and CDN configuration
+        *   Validate and optimize monitoring overhead
+    4.  **Final Testing and Validation:**
+        *   Execute full end-to-end test suite in production
+        *   Validate all success metrics are being met
+        *   Confirm monitoring and alerting systems are fully functional
+        *   Test disaster recovery and rollback procedures
+    5.  **Production Readiness Checklist:**
+        *   All deployment verification tests passing
+        *   Performance metrics meeting success criteria
+        *   Security measures active and validated
+        *   Monitoring and alerting functional
+        *   Documentation complete and current
+        *   Incident response procedures in place
+*   **Validation:**
+    *   Infrastructure cleaned and optimized for production use
+    *   Security measures hardened and validated
+    *   Performance optimized and meeting all success criteria
+    *   All final testing completed successfully
+    *   Production readiness checklist 100% complete
+    *   Application fully functional and ready for user access
+*   **Risks:**
+    *   Final optimizations might introduce unexpected issues or regressions
+    *   Security hardening might break existing functionality
+    *   Performance tuning might have unintended consequences
+*   **Core Document Updates:** Final validation that all core documents are accurate and current.
+*   **Progress:** Not Started

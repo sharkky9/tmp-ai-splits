@@ -1,7 +1,10 @@
 /**
  * Performance Monitoring and Analytics for Task 7.0
  * Tracks success metrics like correction rates and completion times
+ * Enhanced with production monitoring, Vercel Analytics, and Core Web Vitals
  */
+
+// import { startPerformanceTransaction, measureAsyncFunction } from './sentry' // Removed unused imports
 
 interface PerformanceMetric {
   name: string
@@ -25,9 +28,18 @@ interface SettlementMetrics {
   memberCount: number
 }
 
+// Core Web Vitals tracking
+interface WebVitalsMetric {
+  id: string
+  name: 'CLS' | 'FCP' | 'FID' | 'LCP' | 'TTFB'
+  value: number
+  rating: 'good' | 'needs-improvement' | 'poor'
+}
+
 class PerformanceMonitor {
   private metrics: PerformanceMetric[] = []
   private expenseLoggingSessions: Map<string, ExpenseLoggingMetrics> = new Map()
+  private webVitalsBuffer: WebVitalsMetric[] = []
 
   /**
    * Start tracking an expense logging session
@@ -52,7 +64,7 @@ class PerformanceMonitor {
   }
 
   /**
-   * Complete an expense logging session
+   * Complete an expense logging session with Sentry tracking
    */
   completeExpenseLogging(sessionId: string, success: boolean): void {
     const session = this.expenseLoggingSessions.get(sessionId)
@@ -74,12 +86,25 @@ class PerformanceMonitor {
         method: session.method,
       })
 
+      // Send to analytics if enabled
+      if (
+        typeof window !== 'undefined' &&
+        process.env.NEXT_PUBLIC_ENABLE_PERFORMANCE_MONITORING === 'true'
+      ) {
+        this.sendAnalyticsEvent('expense_completed', {
+          duration,
+          method: session.method,
+          success,
+          correctionRequired: session.correctionRequired,
+        })
+      }
+
       this.expenseLoggingSessions.delete(sessionId)
     }
   }
 
   /**
-   * Record settlement calculation metrics
+   * Record settlement calculation metrics with enhanced tracking
    */
   recordSettlementMetrics(metrics: SettlementMetrics): void {
     this.recordMetric('settlement_transaction_count', metrics.transactionCount, {
@@ -96,6 +121,120 @@ class PerformanceMonitor {
       memberCount: metrics.memberCount,
       transactionCount: metrics.transactionCount,
     })
+
+    // Send to analytics
+    if (
+      typeof window !== 'undefined' &&
+      process.env.NEXT_PUBLIC_ENABLE_PERFORMANCE_MONITORING === 'true'
+    ) {
+      this.sendAnalyticsEvent('settlement_calculated', {
+        transactionCount: metrics.transactionCount,
+        memberCount: metrics.memberCount,
+        calculationTime: metrics.calculationTime,
+      })
+    }
+  }
+
+  /**
+   * Record Core Web Vitals
+   */
+  recordWebVital(metric: WebVitalsMetric): void {
+    this.webVitalsBuffer.push(metric)
+
+    // Send to analytics
+    if (
+      typeof window !== 'undefined' &&
+      process.env.NEXT_PUBLIC_ENABLE_PERFORMANCE_MONITORING === 'true'
+    ) {
+      this.sendAnalyticsEvent('web_vital', {
+        name: metric.name,
+        value: metric.value,
+        rating: metric.rating,
+      })
+    }
+  }
+
+  /**
+   * Track page performance
+   */
+  trackPagePerformance(pageName: string): void {
+    if (typeof window !== 'undefined') {
+      const navigation = performance.getEntriesByType(
+        'navigation'
+      )[0] as PerformanceNavigationTiming
+      if (navigation) {
+        const loadTime = navigation.loadEventEnd - navigation.fetchStart
+        const domContentLoaded = navigation.domContentLoadedEventEnd - navigation.fetchStart
+        const firstByte = navigation.responseStart - navigation.fetchStart
+
+        this.recordMetric('page_load_time', loadTime, { page: pageName })
+        this.recordMetric('dom_content_loaded', domContentLoaded, { page: pageName })
+        this.recordMetric('time_to_first_byte', firstByte, { page: pageName })
+
+        // Send to analytics
+        if (process.env.NEXT_PUBLIC_ENABLE_PERFORMANCE_MONITORING === 'true') {
+          this.sendAnalyticsEvent('page_performance', {
+            page: pageName,
+            loadTime,
+            domContentLoaded,
+            firstByte,
+          })
+        }
+      }
+    }
+  }
+
+  /**
+   * Track API performance
+   */
+  trackAPIPerformance(endpoint: string, duration: number, success: boolean): void {
+    this.recordMetric('api_response_time', duration, {
+      endpoint,
+      success,
+    })
+
+    // Send to analytics
+    if (
+      typeof window !== 'undefined' &&
+      process.env.NEXT_PUBLIC_ENABLE_PERFORMANCE_MONITORING === 'true'
+    ) {
+      this.sendAnalyticsEvent('api_call', {
+        endpoint,
+        duration,
+        success,
+      })
+    }
+  }
+
+  /**
+   * Send analytics event (compatible with Vercel Analytics)
+   */
+  private sendAnalyticsEvent(
+    eventName: string,
+    properties: Record<string, string | number | boolean | undefined | null>
+  ): void {
+    try {
+      // Vercel Analytics integration
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (typeof window !== 'undefined' && (window as any).va) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ;(window as any).va('track', eventName, properties)
+      }
+
+      // Custom analytics endpoint (if needed)
+      if (typeof window !== 'undefined') {
+        fetch('/api/analytics', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ event: eventName, properties }),
+        }).catch(() => {
+          // Silently fail analytics to not affect user experience
+        })
+      }
+    } catch (error) {
+      // Silently fail analytics
+      console.debug('Analytics event failed:', error)
+    }
   }
 
   /**

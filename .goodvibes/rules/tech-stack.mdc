@@ -68,8 +68,17 @@ alwaysApply: false
 *   **Package Manager:** pnpm (v8.x)
 *   **Version Control:** Git (hosted on GitHub)
 *   **Deployment:**
-    *   **Frontend:** Vercel (with preview deployments for PRs)
-    *   **Backend:** Supabase Cloud (production/staging environments)
+    *   **Frontend & API Routes:** Vercel (with preview deployments for PRs)
+        *   Framework: Next.js (auto-detected)
+        *   Region: `iad1` (Washington D.C., USA)
+        *   Build Command: Default Next.js build (`pnpm run build`)
+        *   Output Directory: Default Next.js output (`.next`)
+        *   Security Headers: `X-Frame-Options`, `X-Content-Type-Options`, `X-XSS-Protection`, `Referrer-Policy`, `Permissions-Policy` configured in `vercel.json`.
+        *   Caching: API routes set to `no-store, no-cache, must-revalidate`. Static assets cached by Vercel Edge Network.
+        *   Sentry Tunneling: `/monitoring` path rewritten for Sentry event ingestion.
+        *   Environment Variables: Managed via Vercel Dashboard (e.g., `NEXT_PUBLIC_APP_URL`, `SENTRY_ENVIRONMENT`).
+        *   Git Integration: Deployments triggered from `main` branch.
+    *   **Backend (Database & Edge Functions):** Supabase Cloud (production/staging environments)
 *   **Environment Management:**
     *   `.env.local` for local development
     *   Vercel environment variables for frontend
@@ -82,6 +91,10 @@ alwaysApply: false
     *   **Jest** for unit/integration tests (`*.test.tsx` files)
     *   **React Testing Library** for component testing
     *   **Playwright** for E2E testing (planned for critical user flows)
+*   **Deployment Tools:**
+    *   **Vercel CLI (v42.3.0)** for deployment management and preview generation. Configuration via `app_code/vercel.json`.
+    *   **GitHub Actions** for CI/CD pipeline automation (planned for Step 5)
+    *   **Environment Templates** (.env.example) for consistent development setup
 
 ## 4. Key Libraries & Dependencies (from `package.json`)
 
@@ -147,12 +160,18 @@ alwaysApply: false
 *   **Performance Monitoring:**
     *   Vercel Analytics (Core Web Vitals, page performance)
     *   Supabase built-in monitoring (database performance)
+*   **Error Tracking:**
+    *   **Sentry (@sentry/nextjs v9.24.0)** for comprehensive error tracking and performance monitoring
+    *   **Sentry Integrations (@sentry/integrations v7.114.0)** for advanced error capture and user context
+    *   **Configuration:** Next.js webpack plugin with automatic source map upload and privacy controls
+    *   **Session Replay:** Error reproduction with masked sensitive data and media blocking
+    *   **Custom Error Boundaries:** React component-level error capture with context-aware reporting
 *   **Success Metrics Tracking:**
     *   Custom analytics events (expense logging, corrections, settlements)
     *   LLM performance metrics (correction rates, processing times)
     *   User satisfaction tracking (planned feedback collection)
-*   **Error Tracking:**
-    *   Vercel deployment monitoring
+*   **Development Monitoring:**
+    *   Vercel deployment monitoring and build status
     *   Custom error boundaries in React
     *   Supabase Edge Function error logging
 

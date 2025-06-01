@@ -30,7 +30,6 @@ import {
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
-import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Switch } from '@/components/ui/switch'
 import { formatCurrency } from '@/lib/utils/currency'
@@ -359,17 +358,23 @@ export function ManualExpenseForm({
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className='w-auto p-0'>
-                  <Calendar
-                    mode='single'
-                    selected={watch('date_of_expense')}
-                    onSelect={(date) => {
-                      if (date) {
-                        setValue('date_of_expense', date)
-                        setShowCalendar(false)
+                  <div className='p-4'>
+                    <input
+                      type='date'
+                      value={
+                        watch('date_of_expense')
+                          ? format(watch('date_of_expense'), 'yyyy-MM-dd')
+                          : ''
                       }
-                    }}
-                    initialFocus
-                  />
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          setValue('date_of_expense', new Date(e.target.value))
+                          setShowCalendar(false)
+                        }
+                      }}
+                      className='w-full p-2 border rounded'
+                    />
+                  </div>
                 </PopoverContent>
               </Popover>
               {errors.date_of_expense && (

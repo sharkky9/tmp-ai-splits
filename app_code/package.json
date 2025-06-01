@@ -11,7 +11,11 @@
     "test:watch": "jest --watch",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "prepare": "cd .. && pnpm exec husky install"
+    "deploy": "vercel --prod",
+    "deploy:preview": "vercel",
+    "deploy:check": "vercel --prod --confirm",
+    "test:deployment": "jest src/lib/__tests__/deployment.test.ts",
+    "verify:env": "node -e \"console.log('Environment check:', {supabase: !!process.env.NEXT_PUBLIC_SUPABASE_URL, openai: !!process.env.OPENAI_API_KEY})\""
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
@@ -26,6 +30,8 @@
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-switch": "^1.2.5",
     "@radix-ui/react-tabs": "^1.1.12",
+    "@sentry/integrations": "^7.114.0",
+    "@sentry/nextjs": "^9.24.0",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.49.8",
@@ -37,7 +43,6 @@
     "lucide-react": "^0.511.0",
     "next": "15.3.3",
     "react": "^19.0.0",
-    "react-day-picker": "8.10.1",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.56.4",
     "tailwind-merge": "^3.3.0",
