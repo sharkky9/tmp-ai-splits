@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom'
 import { AnalyticsEvent, getAnalytics } from '../monitoring/analytics'
 import { captureErrorWithContext, measureAsyncFunction } from '../monitoring/sentry'
-// import * as Sentry from '@sentry/nextjs' // Sentry will be mocked
+import * as Sentry from '@sentry/nextjs' // Re-add Sentry import for tests that directly reference it
 
 jest.mock('@sentry/nextjs') // Instructs Jest to use the mock from __mocks__
 
