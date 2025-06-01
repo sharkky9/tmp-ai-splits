@@ -24,17 +24,6 @@ export default function Home() {
   const [isLoadingData, setIsLoadingData] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (!isLoading && !user) {
-      router.push('/login')
-      return
-    }
-
-    if (user) {
-      fetchDashboardData()
-    }
-  }, [user, isLoading, router, fetchDashboardData])
-
   const fetchDashboardData = useCallback(async () => {
     if (!user) return
 
@@ -50,6 +39,17 @@ export default function Home() {
       setIsLoadingData(false)
     }
   }, [user])
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.push('/login')
+      return
+    }
+
+    if (user) {
+      fetchDashboardData()
+    }
+  }, [user, isLoading, router, fetchDashboardData])
 
   if (isLoading) {
     return (
