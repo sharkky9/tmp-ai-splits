@@ -3,6 +3,8 @@ import { AnalyticsEvent, getAnalytics } from '../monitoring/analytics'
 import { captureErrorWithContext, measureAsyncFunction } from '../monitoring/sentry'
 import * as Sentry from '@sentry/nextjs'
 
+jest.mock('@sentry/nextjs') // Instructs Jest to use the mock from __mocks__
+
 // Mock Sentry to prevent actual error reporting in tests
 jest.mock('@sentry/nextjs', () => ({
   init: jest.fn(),

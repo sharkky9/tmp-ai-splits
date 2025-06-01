@@ -35,7 +35,18 @@ jobs:
 
       - name: Run tests
         working-directory: ./app_code
-        run: pnpm run test --ci --coverage # Assuming your test script can output to CI
+        run: pnpm run test --ci --coverage
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }} # Potentially needed by Sentry SDK during tests
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }} # Potentially needed
+          SENTRY_ENVIRONMENT: "test" # Set a specific environment for tests
+          NEXT_PUBLIC_ENABLE_PERFORMANCE_MONITORING: "true" # For tests expecting this
+          # For sensitive keys, ensure your tests can handle them being undefined or use placeholders if not essential
+          # OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }} # Only if tests absolutely need it and are secure
+          # SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }} # Only if tests absolutely need it
 
       - name: Build Next.js app
         working-directory: ./app_code
