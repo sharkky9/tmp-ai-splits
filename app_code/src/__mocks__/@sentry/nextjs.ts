@@ -39,6 +39,12 @@ export const withScope = jest.fn((callback) => {
   callback(mockScope)
 })
 
+export const startTransaction = jest.fn(() => ({
+  setStatus: jest.fn(),
+  finish: jest.fn(),
+  // Add other span methods if needed by your code that uses startTransaction
+}))
+
 // Mock other Sentry SDK exports if needed by your sentry.ts utilities
 // e.g., if Sentry.init were called directly in sentry.ts
 // export const init = jest.fn();
