@@ -45,7 +45,7 @@ jobs:
           SENTRY_ENVIRONMENT: "test" # Set a specific environment for tests
           NEXT_PUBLIC_ENABLE_PERFORMANCE_MONITORING: "true" # For tests expecting this
           # For sensitive keys, ensure your tests can handle them being undefined or use placeholders if not essential
-          # OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }} # Only if tests absolutely need it and are secure
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }} # Only if tests absolutely need it and are secure
           # SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }} # Only if tests absolutely need it
 
       - name: Build Next.js app

@@ -18,6 +18,29 @@ jest.mock('@sentry/nextjs', () => ({
     callback(scope)
   }),
   captureException: jest.fn(),
+  startSpan: jest.fn((options, callback) => {
+    if (callback) {
+      try {
+        const mockSpan = {
+          setStatus: jest.fn(),
+          finish: jest.fn(),
+        }
+        const result = callback(mockSpan)
+        if (result && typeof result.then === 'function') {
+          return result.catch((error) => {
+            throw error
+          })
+        }
+        return result
+      } catch (error) {
+        throw error
+      }
+    }
+    return {
+      setStatus: jest.fn(),
+      finish: jest.fn(),
+    }
+  }),
   startTransaction: jest.fn(() => ({
     setStatus: jest.fn(),
     finish: jest.fn(),
@@ -34,6 +57,11 @@ describe('Monitoring Integration Tests', () => {
 
     // Reset analytics instance by clearing the module cache
     jest.resetModules()
+
+    // Explicitly reset the journey for the analytics instance FOR TESTS
+    const analytics = getAnalytics() // get a fresh instance (or reset existing due to resetModules)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(analytics as any).resetJourney_INTERNAL_TEST_ONLY()
   })
 
   describe('Analytics Tracking', () => {

@@ -158,6 +158,9 @@ importers:
       typescript:
         specifier: ^5
         version: 5.8.3
+      whatwg-fetch:
+        specifier: ^3.6.20
+        version: 3.6.20
 
 packages:
   '@adobe/css-tools@4.4.3':
@@ -7315,6 +7318,12 @@ packages:
       }
     engines: { node: '>=18' }
 
+  whatwg-fetch@3.6.20:
+    resolution:
+      {
+        integrity: sha512-EqhiFU6daOA8kpjOWTL0olhVOF3i7OrFzSYiGsEMB8GcXS+RrzauAERX65xMeNWVqxA6HXH2m69Z9LaKKdisfg==,
+      }
+
   whatwg-mimetype@4.0.0:
     resolution:
       {
@@ -12499,6 +12508,8 @@ snapshots:
   whatwg-encoding@3.1.1:
     dependencies:
       iconv-lite: 0.6.3
+
+  whatwg-fetch@3.6.20: {}
 
   whatwg-mimetype@4.0.0: {}
 

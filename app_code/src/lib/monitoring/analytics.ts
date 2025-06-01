@@ -317,6 +317,19 @@ class AnalyticsTracker {
   private generateSessionId(): string {
     return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
   }
+
+  /**
+   * Resets the user journey. FOR INTERNAL TEST USE ONLY.
+   */
+  public resetJourney_INTERNAL_TEST_ONLY(): void {
+    this.journeySteps = []
+    this.sessionId = this.generateSessionId() // Generate new session ID for a fresh journey
+    this.sessionStartTime = new Date()
+    this.track('app_loaded', {
+      timestamp: this.sessionStartTime.toISOString(),
+      userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : 'server',
+    })
+  }
 }
 
 // Global analytics instance
