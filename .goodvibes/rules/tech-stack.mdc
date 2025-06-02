@@ -100,7 +100,7 @@ alwaysApply: false
     *   **Playwright** for E2E testing (planned for critical user flows)
 *   **Deployment Tools:**
     *   **Vercel CLI (v42.3.0)** for deployment management and preview generation. Configuration via `app_code/vercel.json`.
-    *   **GitHub Actions** for CI/CD pipeline automation (planned for Step 5)
+    *   **GitHub Actions** for CI/CD pipeline automation - ✅ **OPERATIONAL**: Automated deployments for `main` (production) and `develop` (staging) branches with 2m 5s average deployment time
     *   **Environment Templates** (.env.example) for consistent development setup
 
 ## 4. Key Libraries & Dependencies (from `package.json`)
