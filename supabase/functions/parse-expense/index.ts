@@ -162,7 +162,7 @@ Be precise with calculations and conservative with confidence scores.`
     })
 
     const openaiPromise = openai.chat.completions.create({
-      model: 'gpt-4o',
+      model: 'o3',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }

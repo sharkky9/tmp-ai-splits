@@ -81,11 +81,21 @@ The application is a web-based platform built on a Next.js frontend and a Supaba
     *   `parse-expense`: Handles OpenAI API interaction, supports multiple expenses per input, implements error handling and fallback strategies
     *   `calculate-settlement`: Implements debt simplification algorithm (minimum spanning tree approach)
     *   `analytics-tracker`: Tracks success metrics (correction rates, completion times, user satisfaction)
+    *   `create-expense-with-splits`: Enhanced expense creation function that handles expense creation with automatic split calculation
+    *       **Input:** Expense details with split method (equal/amount/percentage) and participant information
+    *       **Processing:** 
+    *           - Validates user authentication and group membership
+    *           - Calculates splits based on specified method with precise decimal handling
+    *           - Creates expense and expense_splits records atomically
+    *           - Handles remainder distribution for equal splits
+    *           - Validates split amounts/percentages sum correctly
+    *       **Output:** Complete expense data with created splits and summary information
+    *       **Error Handling:** Comprehensive validation with rollback on failure
 *   **Data Access:** `supabase-js` client library with comprehensive error handling
 
 ## 4. LLM Integration Architecture
 
-*   **Model:** OpenAI GPT-4 (with fallback to GPT-3.5-turbo for cost optimization)
+*   **Model:** OpenAI o3 (with fallback to GPT-3.5-turbo for cost optimization)
 *   **Interaction Patterns:**
     *   **Primary Flow:** Natural language input → structured expense data
     *   **Clarification Flow:** LLM uncertainty → clarifying questions → user response → refined interpretation
@@ -143,10 +153,33 @@ The application is a web-based platform built on a Next.js frontend and a Supaba
     *   `llm_assumptions` (text array)
     *   `llm_confidence_score` (numeric(3,2), nullable)
     *   `status` (text, enum: 'pending_confirmation', 'confirmed', 'edited', 'discarded')
+    *   `category` (text, nullable) -- **Enhanced**: Expense categorization support (food, transport, accommodation, etc.)
+    *   `tags` (text array, nullable) -- **Enhanced**: Flexible tagging system for expense organization
     *   `created_by` (uuid, foreign key to `Users.id`)
     *   `created_at` (timestamp with time zone)
     *   `updated_at` (timestamp with time zone)
     *   `processing_metadata` (jsonb, stores LLM processing info for analytics)
+
+*   **ExpenseSplits Table:** (Advanced expense splitting with detailed member breakdown) -- **New for Enhanced Expense Management**
+    *   `id` (uuid, primary key)
+    *   `expense_id` (uuid, foreign key to `Expenses.expense_id`, cascade delete)
+    *   `member_id` (uuid, foreign key to `GroupMembers.id`)
+    *   `user_id` (uuid, foreign key to `Users.id`, nullable for placeholder members)
+    *   `placeholder_name` (text, nullable, for non-registered participants)
+    *   `split_amount` (decimal(10,2), amount this member owes for the expense)
+    *   `share_description` (text, nullable, explanation of split calculation e.g., "Equal split of $30 among 3 people")
+    *   `created_at` (timestamp with time zone)
+    *   `updated_at` (timestamp with time zone)
+    *   **Constraints:**
+        *   Either `user_id` or `placeholder_name` must be provided (but not both)
+        *   Unique constraint on (`expense_id`, `member_id`) to prevent duplicate splits
+    *   **Indexes:** Optimized for `expense_id`, `member_id`, and `user_id` lookups
+    *   **RLS Policies:** Users can only access splits for groups they belong to
+
+*   **ExpensesWithSplits View:** (Convenience view combining expenses with their splits) -- **New for Enhanced Expense Management**
+    *   Joins `Expenses` and `ExpenseSplits` tables
+    *   Returns complete expense data with nested `expense_splits` array
+    *   Optimized for displaying detailed expense breakdowns in the UI
 
 *   **AnalyticsEvents Table:** (Tracks success metrics)
     *   `event_id` (uuid, primary key)

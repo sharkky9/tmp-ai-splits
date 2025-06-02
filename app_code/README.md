@@ -31,7 +31,7 @@ An intelligent expense splitting application built with Next.js, Supabase, and O
 
 - **Frontend**: Next.js 14 (App Router), React, TypeScript, Tailwind CSS
 - **Backend**: Supabase (PostgreSQL database, Edge Functions, Authentication)
-- **AI Integration**: OpenAI GPT-4 Vision for receipt parsing
+- **AI Integration**: OpenAI o3 for advanced natural language reasoning and expense parsing
 - **Deployment**: Vercel with automated CI/CD via GitHub Actions
 - **Monitoring**: Sentry for error tracking, Vercel Analytics for performance
 

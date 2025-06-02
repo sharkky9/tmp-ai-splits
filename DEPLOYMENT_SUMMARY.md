@@ -40,7 +40,7 @@
 - **Frontend Hosting:** Vercel (with Edge Functions)
 - **Database:** Supabase (PostgreSQL with RLS)
 - **Authentication:** Supabase Auth
-- **AI Integration:** OpenAI GPT-4 Vision API
+- **AI Integration:** OpenAI o3 API
 - **Monitoring:** Sentry + Vercel Analytics
 - **CI/CD:** GitHub Actions
 

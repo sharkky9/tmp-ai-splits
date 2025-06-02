@@ -1,673 +1,749 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
-import { useForm, useFieldArray } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import {
-  CalendarIcon,
-  Plus,
-  Trash2,
-  DollarSign,
-  Users,
-  Save,
-  X,
-  Receipt,
-  List,
-  Calculator,
-} from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { Separator } from '@/components/ui/separator'
-import { Badge } from '@/components/ui/badge'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Switch } from '@/components/ui/switch'
-import { formatCurrency } from '@/lib/utils/currency'
-import { formatDateForAPI } from '@/lib/utils/dateUtils'
-import { cn } from '@/lib/utils'
-import { format } from 'date-fns'
-import Decimal from 'decimal.js'
-import type { Expense, GroupMemberWithProfile } from '@/types/database'
-import { ItemizedSplitForm } from './ItemizedSplitForm'
+import React, { useState, useEffect, useMemo } from 'react'
+import { CreateExpenseRequest, ExpenseParticipantInput, SplitMethod } from '../../types/database'
+import { useCreateExpense } from '../../hooks/useExpenses'
+import { ExpenseCategoryIcon } from './ExpenseCategoryIcon'
+import { formatCurrency } from '../../lib/expenseUtils'
+import { Calendar, DollarSign, Users, Calculator, AlertCircle, Check, X, Plus } from 'lucide-react'
 
-const manualExpenseSchema = z.object({
-  description: z.string().min(1, 'Description is required'),
-  total_amount: z.number().positive('Amount must be positive'),
-  currency: z.string().min(3, 'Currency code required'),
-  date_of_expense: z.date(),
-  payers: z
-    .array(
-      z.object({
-        user_id: z.string().optional(),
-        placeholder_name: z.string().optional(),
-        amount: z.number().positive('Amount must be positive'),
-      })
-    )
-    .min(1, 'At least one payer is required'),
-  participants: z
-    .array(
-      z.object({
-        user_id: z.string().optional(),
-        placeholder_name: z.string().optional(),
-        amount: z.number().positive('Amount must be positive'),
-        percentage: z.number().optional(),
-      })
-    )
-    .min(1, 'At least one participant is required'),
-  is_itemized: z.boolean(),
-  items: z
-    .array(
-      z.object({
-        id: z.string(),
-        description: z.string().min(1, 'Item description is required'),
-        amount: z.number().positive('Amount must be positive'),
-        participants: z.array(
-          z.object({
-            user_id: z.string().optional(),
-            placeholder_name: z.string().optional(),
-            amount: z.number().positive('Amount must be positive'),
-          })
-        ),
-      })
-    )
-    .optional(),
-})
-
-type ManualExpenseFormData = z.infer<typeof manualExpenseSchema>
+interface GroupMember {
+  id: string
+  user_id?: string
+  placeholder_name?: string
+  is_placeholder: boolean
+  name: string // Display name (from profile or placeholder_name)
+}
 
 interface ManualExpenseFormProps {
   groupId: string
-  groupMembers: GroupMemberWithProfile[]
-  onSubmit: (expense: Partial<Expense>) => void
-  onCancel: () => void
-  initialData?: Partial<Expense>
-  isLoading?: boolean
+  groupMembers: GroupMember[]
+  onClose: () => void
+  onSubmit: (expense: CreateExpenseRequest) => void
+  initialData?: Partial<CreateExpenseRequest>
 }
 
-type SplitMethod = 'equal' | 'exact' | 'percentage' | 'shares'
+interface FormData {
+  description: string
+  total_amount: string
+  currency: string
+  date_of_expense: string
+  category: string
+  tags: string[]
+  payer_id: string
+  split_method: SplitMethod
+  participants: string[] // Member IDs
+  custom_amounts: Record<string, string>
+  custom_percentages: Record<string, string>
+}
+
+interface FormErrors {
+  description?: string
+  total_amount?: string
+  currency?: string
+  date_of_expense?: string
+  payer_id?: string
+  participants?: string
+  custom_amounts?: string
+  custom_percentages?: string
+  general?: string
+}
+
+const EXPENSE_CATEGORIES = [
+  'food',
+  'transport',
+  'accommodation',
+  'entertainment',
+  'groceries',
+  'utilities',
+  'shopping',
+  'healthcare',
+  'education',
+  'other',
+]
+
+const DEFAULT_TAGS = [
+  'dinner',
+  'lunch',
+  'breakfast',
+  'drinks',
+  'coffee',
+  'gas',
+  'taxi',
+  'uber',
+  'flight',
+  'hotel',
+  'groceries',
+  'shopping',
+  'bills',
+  'rent',
+  'movie',
+  'concert',
+  'sports',
+  'party',
+]
 
 export function ManualExpenseForm({
   groupId,
   groupMembers,
+  onClose,
   onSubmit,
-  onCancel,
   initialData,
-  isLoading = false,
 }: ManualExpenseFormProps) {
-  const [splitMethod, setSplitMethod] = useState<SplitMethod>('equal')
-  const [showCalendar, setShowCalendar] = useState(false)
-  const [isItemizedMode, setIsItemizedMode] = useState(false)
-  const [itemizedValid, setItemizedValid] = useState(false)
+  // For now, we'll use a mock implementation since the hook isn't implemented yet
+  const isLoading = false
+  const error = null
 
-  const {
-    register,
-    control,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-    watch,
-    setValue,
-    getValues,
-    reset,
-  } = useForm<ManualExpenseFormData>({
-    resolver: zodResolver(manualExpenseSchema),
-    defaultValues: {
-      description: initialData?.description || '',
-      total_amount: initialData?.total_amount || 0,
-      currency: initialData?.currency || 'USD',
-      date_of_expense: initialData?.date_of_expense
-        ? new Date(initialData.date_of_expense)
-        : new Date(),
-      payers: initialData?.payers || [{ user_id: '', placeholder_name: '', amount: 0 }],
-      participants: initialData?.participants || [
-        { user_id: '', placeholder_name: '', amount: 0, percentage: 0 },
-      ],
-      is_itemized: false,
-      items: [],
-    },
+  // Form state
+  const [formData, setFormData] = useState<FormData>({
+    description: initialData?.description || '',
+    total_amount: initialData?.total_amount?.toString() || '',
+    currency: initialData?.currency || 'USD',
+    date_of_expense: initialData?.date_of_expense || new Date().toISOString().split('T')[0],
+    category: initialData?.category || '',
+    tags: (initialData as any)?.tags || [],
+    payer_id: (initialData as any)?.payer_id || '',
+    split_method: (initialData?.split_method as SplitMethod) || 'equal',
+    participants: [],
+    custom_amounts: {},
+    custom_percentages: {}
   })
 
-  const {
-    fields: payerFields,
-    append: appendPayer,
-    remove: removePayer,
-  } = useFieldArray({
-    control,
-    name: 'payers',
-  })
+  const [errors, setErrors] = useState<FormErrors>({})
+  const [newTag, setNewTag] = useState('')
+  const [showTagInput, setShowTagInput] = useState(false)
 
-  const {
-    fields: participantFields,
-    append: appendParticipant,
-    remove: removeParticipant,
-  } = useFieldArray({
-    control,
-    name: 'participants',
-  })
+  // Calculate equal split preview
+  const equalSplitAmount = useMemo(() => {
+    const amount = parseFloat(formData.total_amount)
+    const participantCount = formData.participants.length
 
-  const watchedTotalAmount = watch('total_amount')
-  const watchedPayers = watch('payers')
-  const watchedParticipants = watch('participants')
+    if (isNaN(amount) || participantCount === 0) return 0
 
-  const getMemberOptions = () => {
-    return groupMembers.map((member) => ({
-      id: member.user_id || `placeholder-${member.id}`,
-      name: member.profiles?.name || member.placeholder_name || 'Unknown',
-      isPlaceholder: member.is_placeholder,
+    return amount / participantCount
+  }, [formData.total_amount, formData.participants.length])
+
+  // Calculate total for custom amounts/percentages
+  const customTotals = useMemo(() => {
+    const amounts = Object.values(formData.custom_amounts)
+      .map((val) => parseFloat(val) || 0)
+      .reduce((sum, val) => sum + val, 0)
+
+    const percentages = Object.values(formData.custom_percentages)
+      .map((val) => parseFloat(val) || 0)
+      .reduce((sum, val) => sum + val, 0)
+
+    return { amounts, percentages }
+  }, [formData.custom_amounts, formData.custom_percentages])
+
+  // Update form field
+  const updateField = (field: keyof FormData, value: any) => {
+    setFormData((prev) => ({ ...prev, [field]: value }))
+    // Clear related errors
+    if (errors[field as keyof FormErrors]) {
+      setErrors((prev) => ({ ...prev, [field]: undefined }))
+    }
+  }
+
+  // Handle participant selection
+  const toggleParticipant = (memberId: string) => {
+    setFormData((prev) => {
+      const isSelected = prev.participants.includes(memberId)
+      const newParticipants = isSelected
+        ? prev.participants.filter((id) => id !== memberId)
+        : [...prev.participants, memberId]
+
+      // Clean up custom amounts/percentages if participant removed
+      const newCustomAmounts = { ...prev.custom_amounts }
+      const newCustomPercentages = { ...prev.custom_percentages }
+
+      if (isSelected) {
+        delete newCustomAmounts[memberId]
+        delete newCustomPercentages[memberId]
+      }
+
+      return {
+        ...prev,
+        participants: newParticipants,
+        custom_amounts: newCustomAmounts,
+        custom_percentages: newCustomPercentages,
+      }
+    })
+  }
+
+  // Handle custom amount/percentage change
+  const updateCustomValue = (memberId: string, value: string, type: 'amount' | 'percentage') => {
+    const field = type === 'amount' ? 'custom_amounts' : 'custom_percentages'
+    setFormData((prev) => ({
+      ...prev,
+      [field]: { ...prev[field], [memberId]: value },
     }))
   }
 
-  // Calculate totals for validation
-  const payersTotal = watchedPayers?.reduce((sum, payer) => sum + (payer.amount || 0), 0) || 0
-  const participantsTotal =
-    watchedParticipants?.reduce((sum, participant) => sum + (participant.amount || 0), 0) || 0
-
-  // Auto-calculate equal splits
-  const handleEqualSplit = useCallback(() => {
-    if (participantFields.length === 0 || !watchedTotalAmount) return
-
-    const equalAmount = new Decimal(watchedTotalAmount).div(participantFields.length)
-    const roundedAmount = equalAmount.toDecimalPlaces(2, Decimal.ROUND_HALF_UP)
-
-    participantFields.forEach((_, index) => {
-      setValue(`participants.${index}.amount`, roundedAmount.toNumber())
-      setValue(
-        `participants.${index}.percentage`,
-        new Decimal(100).div(participantFields.length).toDecimalPlaces(1).toNumber()
-      )
-    })
-  }, [participantFields, watchedTotalAmount, setValue])
-
-  // Auto-calculate from percentages
-  const handlePercentageSplit = () => {
-    if (!watchedTotalAmount) return
-
-    participantFields.forEach((_, index) => {
-      const percentage = getValues(`participants.${index}.percentage`)
-      if (percentage) {
-        const amount = new Decimal(watchedTotalAmount).mul(percentage).div(100)
-        setValue(`participants.${index}.amount`, amount.toDecimalPlaces(2).toNumber())
-      }
-    })
+  // Add tag
+  const addTag = (tag: string) => {
+    if (tag && !formData.tags.includes(tag)) {
+      updateField('tags', [...formData.tags, tag])
+    }
+    setNewTag('')
+    setShowTagInput(false)
   }
 
-  // Auto-split for payers (set first payer to full amount)
-  const handlePayerAutoFill = () => {
-    if (payerFields.length > 0 && watchedTotalAmount) {
-      setValue(`payers.0.amount`, watchedTotalAmount)
-      // Clear other payers
-      for (let i = 1; i < payerFields.length; i++) {
-        setValue(`payers.${i}.amount`, 0)
+  // Remove tag
+  const removeTag = (tagToRemove: string) => {
+    updateField(
+      'tags',
+      formData.tags.filter((tag) => tag !== tagToRemove)
+    )
+  }
+
+  // Validation
+  const validateForm = (): FormErrors => {
+    const newErrors: FormErrors = {}
+
+    if (!formData.description.trim()) {
+      newErrors.description = 'Description is required'
+    }
+
+    const amount = parseFloat(formData.total_amount)
+    if (!formData.total_amount || isNaN(amount) || amount <= 0) {
+      newErrors.total_amount = 'Amount must be a positive number'
+    }
+
+    if (!formData.payer_id) {
+      newErrors.payer_id = 'Payer is required'
+    }
+
+    if (formData.participants.length === 0) {
+      newErrors.participants = 'At least one participant is required'
+    }
+
+    // Validate split amounts/percentages
+    if (formData.split_method === 'amount' && formData.participants.length > 0) {
+      const totalCustomAmount = customTotals.amounts
+      const expectedAmount = parseFloat(formData.total_amount) || 0
+
+      if (Math.abs(totalCustomAmount - expectedAmount) > 0.01) {
+        newErrors.custom_amounts = `Amounts must sum to ${formatCurrency(expectedAmount)} (currently ${formatCurrency(totalCustomAmount)})`
       }
     }
-  }
 
-  // Toggle itemized mode
-  const handleItemizedToggle = (checked: boolean) => {
-    setIsItemizedMode(checked)
-    setValue('is_itemized', checked)
-    if (!checked) {
-      setValue('items', [])
+    if (formData.split_method === 'percentage' && formData.participants.length > 0) {
+      const totalPercentage = customTotals.percentages
+
+      if (Math.abs(totalPercentage - 100) > 0.01) {
+        newErrors.custom_percentages = `Percentages must sum to 100% (currently ${totalPercentage.toFixed(1)}%)`
+      }
     }
+
+    return newErrors
   }
 
-  const onFormSubmit = (data: ManualExpenseFormData) => {
-    const expense: Partial<Expense> = {
+  // Handle form submission
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+
+    const validationErrors = validateForm()
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors)
+      return
+    }
+
+    // Build participants array
+    const participants: ExpenseParticipantInput[] = formData.participants.map((memberId) => {
+      const member = groupMembers.find((m) => m.id === memberId)!
+
+      const base = {
+        member_id: memberId,
+        user_id: member.user_id,
+        placeholder_name: member.placeholder_name,
+      }
+
+      if (formData.split_method === 'amount') {
+        return {
+          ...base,
+          split_amount: parseFloat(formData.custom_amounts[memberId]) || 0,
+        }
+      }
+
+      if (formData.split_method === 'percentage') {
+        return {
+          ...base,
+          split_percentage: parseFloat(formData.custom_percentages[memberId]) || 0,
+        }
+      }
+
+      return base
+    })
+
+    const expenseRequest: CreateExpenseRequest = {
       group_id: groupId,
-      description: data.description,
-      total_amount: data.total_amount,
-      currency: data.currency,
-      date_of_expense: formatDateForAPI(data.date_of_expense),
-      payers: data.payers,
-      participants: data.participants,
-      items: data.is_itemized ? data.items : undefined,
-      status: 'confirmed' as const,
-      created_by: '', // Will be set by the parent component
+      description: formData.description.trim(),
+      total_amount: parseFloat(formData.total_amount),
+      currency: formData.currency,
+      date_of_expense: formData.date_of_expense,
+      category: formData.category || undefined,
+      payer_id: formData.payer_id,
+      split_method: formData.split_method,
+      participants,
     }
-    onSubmit(expense)
-  }
 
-  const addPayer = () => {
-    appendPayer({ user_id: '', placeholder_name: '', amount: 0 })
-  }
-
-  const addParticipant = () => {
-    appendParticipant({ user_id: '', placeholder_name: '', amount: 0, percentage: 0 })
-  }
-
-  const handleAddAllMembers = () => {
-    // Clear existing participants
-    reset({
-      ...getValues(),
-      participants: groupMembers.map((member) => ({
-        user_id: member.user_id || undefined,
-        placeholder_name: member.placeholder_name || undefined,
-        amount: 0,
-        percentage: 0,
-      })),
-    })
-  }
-
-  useEffect(() => {
-    if (splitMethod === 'equal' && participantFields.length > 0 && watchedTotalAmount > 0) {
-      handleEqualSplit()
+    // Add tags if they exist
+    if (formData.tags.length > 0) {
+      ;(expenseRequest as any).tags = formData.tags
     }
-  }, [splitMethod, participantFields.length, watchedTotalAmount, handleEqualSplit])
+
+    onSubmit(expenseRequest)
+  }
 
   return (
-    <Card className='w-full max-w-4xl mx-auto'>
-      <CardHeader>
-        <CardTitle className='text-xl font-semibold flex items-center gap-2'>
-          <Receipt className='w-5 h-5' />
-          {initialData ? 'Edit Expense' : 'Add Expense Manually'}
-        </CardTitle>
-        <p className='text-sm text-gray-600'>
-          {initialData
-            ? 'Update expense details and split allocation.'
-            : 'Create a new expense with detailed split information.'}
-        </p>
-      </CardHeader>
-
-      <CardContent>
-        <form onSubmit={handleSubmit(onFormSubmit)} className='space-y-6'>
-          {/* Basic Information */}
-          <div className='space-y-4'>
-            <div>
-              <Label htmlFor='description'>Description *</Label>
-              <Textarea
-                id='description'
-                {...register('description')}
-                placeholder="What was this expense for? (e.g., 'Groceries for the weekend')"
-                rows={2}
-              />
-              {errors.description && (
-                <p className='text-sm text-red-600 mt-1'>{errors.description.message}</p>
-              )}
-            </div>
-
-            <div className='grid grid-cols-2 gap-4'>
-              <div>
-                <Label htmlFor='total_amount'>Total Amount *</Label>
-                <div className='relative'>
-                  <DollarSign className='absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400' />
-                  <Input
-                    id='total_amount'
-                    type='number'
-                    step='0.01'
-                    min='0'
-                    className='pl-9'
-                    {...register('total_amount', { valueAsNumber: true })}
-                    placeholder='0.00'
-                  />
-                </div>
-                {errors.total_amount && (
-                  <p className='text-sm text-red-600 mt-1'>{errors.total_amount.message}</p>
-                )}
-              </div>
-
-              <div>
-                <Label htmlFor='currency'>Currency</Label>
-                <Select
-                  value={watch('currency')}
-                  onValueChange={(value) => setValue('currency', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder='Select currency' />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value='USD'>USD ($)</SelectItem>
-                    <SelectItem value='EUR'>EUR (€)</SelectItem>
-                    <SelectItem value='GBP'>GBP (£)</SelectItem>
-                    <SelectItem value='CAD'>CAD (C$)</SelectItem>
-                    <SelectItem value='AUD'>AUD (A$)</SelectItem>
-                    <SelectItem value='JPY'>JPY (¥)</SelectItem>
-                  </SelectContent>
-                </Select>
-                {errors.currency && (
-                  <p className='text-sm text-red-600 mt-1'>{errors.currency.message}</p>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <Label>Date of Expense</Label>
-              <Popover open={showCalendar} onOpenChange={setShowCalendar}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant='outline'
-                    className={cn(
-                      'w-full justify-start text-left font-normal',
-                      !watch('date_of_expense') && 'text-muted-foreground'
-                    )}
-                  >
-                    <CalendarIcon className='mr-2 h-4 w-4' />
-                    {watch('date_of_expense') ? (
-                      format(watch('date_of_expense'), 'PPP')
-                    ) : (
-                      <span>Pick a date</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className='w-auto p-0'>
-                  <div className='p-4'>
-                    <input
-                      type='date'
-                      value={
-                        watch('date_of_expense')
-                          ? format(watch('date_of_expense'), 'yyyy-MM-dd')
-                          : ''
-                      }
-                      onChange={(e) => {
-                        if (e.target.value) {
-                          setValue('date_of_expense', new Date(e.target.value))
-                          setShowCalendar(false)
-                        }
-                      }}
-                      className='w-full p-2 border rounded'
-                    />
-                  </div>
-                </PopoverContent>
-              </Popover>
-              {errors.date_of_expense && (
-                <p className='text-sm text-red-600 mt-1'>{errors.date_of_expense.message}</p>
-              )}
-            </div>
-
-            {/* Itemized Mode Toggle */}
-            <div className='flex items-center space-x-2 p-3 bg-blue-50 rounded-lg border border-blue-200'>
-              <Switch
-                id='itemized-mode'
-                checked={isItemizedMode}
-                onCheckedChange={handleItemizedToggle}
-              />
-              <Label htmlFor='itemized-mode' className='flex items-center gap-2 cursor-pointer'>
-                <List className='w-4 h-4' />
-                Enable itemized expenses (split by individual items)
-              </Label>
-            </div>
+    <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50'>
+      <div className='bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto'>
+        <div className='p-6'>
+          <div className='flex items-center justify-between mb-6'>
+            <h2 className='text-2xl font-bold text-gray-900'>Add New Expense</h2>
+            <button
+              onClick={onClose}
+              className='text-gray-400 hover:text-gray-600'
+              aria-label='Close'
+            >
+              <X size={24} />
+            </button>
           </div>
 
-          {/* Itemized Mode */}
-          {isItemizedMode ? (
-            <div className='space-y-4'>
-              <Separator />
-              <ItemizedSplitForm
-                groupMembers={groupMembers}
-                totalAmount={watchedTotalAmount || 0}
-                currency={watch('currency')}
-                onItemsChange={(items) => setValue('items', items)}
-                onValidationChange={setItemizedValid}
-              />
+          {error && (
+            <div className='mb-4 p-3 bg-red-50 border border-red-200 rounded-md'>
+              <div className='flex items-center'>
+                <AlertCircle className='text-red-500 mr-2' size={16} />
+                <span className='text-red-700 text-sm'>{(error as any)?.message || 'An error occurred'}</span>
+              </div>
             </div>
-          ) : (
-            <>
-              <Separator />
-
-              {/* Simple Mode - Payers Section */}
-              <div className='space-y-4'>
-                <div className='flex items-center justify-between'>
-                  <h3 className='text-lg font-medium flex items-center gap-2'>
-                    <DollarSign className='w-5 h-5' />
-                    Who Paid?
-                  </h3>
-                  <div className='flex gap-2'>
-                    <Button type='button' variant='outline' size='sm' onClick={handlePayerAutoFill}>
-                      <Calculator className='w-4 h-4 mr-2' />
-                      Auto-fill
-                    </Button>
-                    <Button type='button' variant='outline' size='sm' onClick={addPayer}>
-                      <Plus className='w-4 h-4 mr-2' />
-                      Add Payer
-                    </Button>
-                  </div>
-                </div>
-
-                <div className='space-y-3'>
-                  {payerFields.map((field, index) => (
-                    <div key={field.id} className='flex items-center gap-3 p-3 border rounded-lg'>
-                      <div className='flex-1'>
-                        <Select
-                          value={watch(`payers.${index}.user_id`) || ''}
-                          onValueChange={(value) => {
-                            const selectedMember = groupMembers.find(
-                              (m) => m.user_id === value || m.id === value
-                            )
-                            if (selectedMember) {
-                              setValue(
-                                `payers.${index}.user_id`,
-                                selectedMember.user_id || undefined
-                              )
-                              setValue(
-                                `payers.${index}.placeholder_name`,
-                                selectedMember.placeholder_name || undefined
-                              )
-                            }
-                          }}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder='Select member' />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {getMemberOptions().map((member) => (
-                              <SelectItem key={member.id} value={member.id}>
-                                {member.name}{' '}
-                                {member.isPlaceholder && (
-                                  <Badge variant='secondary' className='ml-2'>
-                                    Placeholder
-                                  </Badge>
-                                )}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className='w-32'>
-                        <Input
-                          type='number'
-                          step='0.01'
-                          min='0'
-                          placeholder='Amount'
-                          {...register(`payers.${index}.amount`, { valueAsNumber: true })}
-                        />
-                      </div>
-                      <Button
-                        type='button'
-                        variant='outline'
-                        size='sm'
-                        onClick={() => removePayer(index)}
-                        disabled={payerFields.length <= 1}
-                      >
-                        <Trash2 className='w-4 h-4' />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-
-                {Math.abs(payersTotal - watchedTotalAmount) > 0.01 && (
-                  <div className='p-3 bg-yellow-50 border border-yellow-200 rounded-lg'>
-                    <p className='text-sm text-yellow-800'>
-                      Warning: Payers total ({formatCurrency(payersTotal, watch('currency'))})
-                      doesn&apos;t match expense total (
-                      {formatCurrency(watchedTotalAmount, watch('currency'))})
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              <Separator />
-
-              {/* Participants Section */}
-              <div className='space-y-4'>
-                <div className='flex items-center justify-between'>
-                  <h3 className='text-lg font-medium flex items-center gap-2'>
-                    <Users className='w-5 h-5' />
-                    Who Owes?
-                  </h3>
-                  <div className='flex gap-2'>
-                    <Select
-                      value={splitMethod}
-                      onValueChange={(value: SplitMethod) => setSplitMethod(value)}
-                    >
-                      <SelectTrigger className='w-32'>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value='equal'>Equal</SelectItem>
-                        <SelectItem value='exact'>Exact</SelectItem>
-                        <SelectItem value='percentage'>Percentage</SelectItem>
-                        <SelectItem value='shares'>Shares</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Button type='button' variant='outline' size='sm' onClick={handleAddAllMembers}>
-                      Add All
-                    </Button>
-                    <Button type='button' variant='outline' size='sm' onClick={addParticipant}>
-                      <Plus className='w-4 h-4 mr-2' />
-                      Add Person
-                    </Button>
-                  </div>
-                </div>
-
-                {splitMethod === 'equal' && (
-                  <Button type='button' variant='outline' size='sm' onClick={handleEqualSplit}>
-                    <Calculator className='w-4 h-4 mr-2' />
-                    Calculate Equal Split
-                  </Button>
-                )}
-
-                {splitMethod === 'percentage' && (
-                  <Button type='button' variant='outline' size='sm' onClick={handlePercentageSplit}>
-                    <Calculator className='w-4 h-4 mr-2' />
-                    Calculate from Percentages
-                  </Button>
-                )}
-
-                <div className='space-y-3'>
-                  {participantFields.map((field, index) => (
-                    <div key={field.id} className='flex items-center gap-3 p-3 border rounded-lg'>
-                      <div className='flex-1'>
-                        <Select
-                          value={watch(`participants.${index}.user_id`) || ''}
-                          onValueChange={(value) => {
-                            const selectedMember = groupMembers.find(
-                              (m) => m.user_id === value || m.id === value
-                            )
-                            if (selectedMember) {
-                              setValue(
-                                `participants.${index}.user_id`,
-                                selectedMember.user_id || undefined
-                              )
-                              setValue(
-                                `participants.${index}.placeholder_name`,
-                                selectedMember.placeholder_name || undefined
-                              )
-                            }
-                          }}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder='Select member' />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {getMemberOptions().map((member) => (
-                              <SelectItem key={member.id} value={member.id}>
-                                {member.name}{' '}
-                                {member.isPlaceholder && (
-                                  <Badge variant='secondary' className='ml-2'>
-                                    Placeholder
-                                  </Badge>
-                                )}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {splitMethod === 'percentage' && (
-                        <div className='w-24'>
-                          <Input
-                            type='number'
-                            step='0.1'
-                            min='0'
-                            max='100'
-                            placeholder='%'
-                            {...register(`participants.${index}.percentage`, {
-                              valueAsNumber: true,
-                            })}
-                          />
-                        </div>
-                      )}
-
-                      <div className='w-32'>
-                        <Input
-                          type='number'
-                          step='0.01'
-                          min='0'
-                          placeholder='Amount'
-                          {...register(`participants.${index}.amount`, { valueAsNumber: true })}
-                        />
-                      </div>
-
-                      <Button
-                        type='button'
-                        variant='outline'
-                        size='sm'
-                        onClick={() => removeParticipant(index)}
-                        disabled={participantFields.length <= 1}
-                      >
-                        <Trash2 className='w-4 h-4' />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-
-                {Math.abs(participantsTotal - watchedTotalAmount) > 0.01 && (
-                  <div className='p-3 bg-yellow-50 border border-yellow-200 rounded-lg'>
-                    <p className='text-sm text-yellow-800'>
-                      Warning: Participants total (
-                      {formatCurrency(participantsTotal, watch('currency'))}) doesn&apos;t match
-                      expense total ({formatCurrency(watchedTotalAmount, watch('currency'))})
-                    </p>
-                  </div>
-                )}
-              </div>
-            </>
           )}
 
-          <Separator />
+          <form onSubmit={handleSubmit} role='form' className='space-y-6'>
+            {/* Basic Details */}
+            <div className='space-y-4'>
+              <h3 className='text-lg font-semibold text-gray-900 border-b pb-2'>Expense Details</h3>
 
-          {/* Action Buttons */}
-          <div className='flex flex-col sm:flex-row gap-3'>
-            <Button
-              type='submit'
-              disabled={isLoading || isSubmitting || (isItemizedMode && !itemizedValid)}
-              className='flex-1 bg-green-600 hover:bg-green-700 text-white'
-            >
-              <Save className='w-4 h-4 mr-2' />
-              {initialData ? 'Update Expense' : 'Create Expense'}
-            </Button>
+              {/* Description */}
+              <div>
+                <label
+                  htmlFor='description'
+                  className='block text-sm font-medium text-gray-700 mb-1'
+                >
+                  Description *
+                </label>
+                <input
+                  id='description'
+                  type='text'
+                  value={formData.description}
+                  onChange={(e) => updateField('description', e.target.value)}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    errors.description ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                  placeholder='What was this expense for?'
+                />
+                {errors.description && (
+                  <p className='mt-1 text-sm text-red-600'>{errors.description}</p>
+                )}
+              </div>
 
-            <Button
-              type='button'
-              onClick={onCancel}
-              disabled={isLoading || isSubmitting}
-              variant='outline'
-              className='flex-1'
-            >
-              <X className='w-4 h-4 mr-2' />
-              Cancel
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+              {/* Amount and Date */}
+              <div className='grid grid-cols-2 gap-4'>
+                <div>
+                  <label htmlFor='amount' className='block text-sm font-medium text-gray-700 mb-1'>
+                    Amount *
+                  </label>
+                  <div className='relative'>
+                    <DollarSign
+                      className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400'
+                      size={16}
+                    />
+                    <input
+                      id='amount'
+                      name='total_amount'
+                      type='number'
+                      step='0.01'
+                      min='0'
+                      value={formData.total_amount}
+                      onChange={(e) => updateField('total_amount', e.target.value)}
+                      className={`w-full pl-10 pr-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        errors.total_amount ? 'border-red-300' : 'border-gray-300'
+                      }`}
+                      placeholder='0.00'
+                    />
+                  </div>
+                  {errors.total_amount && (
+                    <p className='mt-1 text-sm text-red-600'>{errors.total_amount}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor='date' className='block text-sm font-medium text-gray-700 mb-1'>
+                    Date
+                  </label>
+                  <div className='relative'>
+                    <Calendar
+                      className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400'
+                      size={16}
+                    />
+                    <input
+                      id='date'
+                      type='date'
+                      value={formData.date_of_expense}
+                      onChange={(e) => updateField('date_of_expense', e.target.value)}
+                      className='w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Category */}
+              <div>
+                <label htmlFor='category' className='block text-sm font-medium text-gray-700 mb-1'>
+                  Category
+                </label>
+                <select
+                  id='category'
+                  value={formData.category}
+                  onChange={(e) => updateField('category', e.target.value)}
+                  className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                >
+                  <option value=''>Select a category</option>
+                  {EXPENSE_CATEGORIES.map((category) => (
+                    <option key={category} value={category}>
+                      {category.charAt(0).toUpperCase() + category.slice(1)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Tags */}
+              <div>
+                <label className='block text-sm font-medium text-gray-700 mb-2'>Tags</label>
+                <div className='flex flex-wrap gap-2 mb-2'>
+                  {formData.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className='inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800'
+                    >
+                      {tag}
+                      <button
+                        type='button'
+                        onClick={() => removeTag(tag)}
+                        className='ml-1 text-blue-600 hover:text-blue-800'
+                      >
+                        <X size={12} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+
+                {showTagInput ? (
+                  <div className='flex gap-2'>
+                    <input
+                      type='text'
+                      value={newTag}
+                      onChange={(e) => setNewTag(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && addTag(newTag)}
+                      className='flex-1 px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500'
+                      placeholder='Add a tag'
+                      autoFocus
+                    />
+                    <button
+                      type='button'
+                      onClick={() => addTag(newTag)}
+                      className='px-3 py-1 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600'
+                    >
+                      Add
+                    </button>
+                    <button
+                      type='button'
+                      onClick={() => setShowTagInput(false)}
+                      className='px-3 py-1 bg-gray-300 text-gray-700 rounded-md text-sm hover:bg-gray-400'
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <div className='flex flex-wrap gap-2'>
+                    {DEFAULT_TAGS.filter((tag) => !formData.tags.includes(tag))
+                      .slice(0, 6)
+                      .map((tag) => (
+                        <button
+                          key={tag}
+                          type='button'
+                          onClick={() => addTag(tag)}
+                          className='px-2 py-1 text-xs border border-gray-300 rounded-full hover:bg-gray-50'
+                        >
+                          {tag}
+                        </button>
+                      ))}
+                    <button
+                      type='button'
+                      onClick={() => setShowTagInput(true)}
+                      className='inline-flex items-center px-2 py-1 text-xs border border-dashed border-gray-300 rounded-full hover:bg-gray-50'
+                    >
+                      <Plus size={12} className='mr-1' />
+                      Add custom
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Payer */}
+              <div>
+                <label htmlFor='payer' className='block text-sm font-medium text-gray-700 mb-1'>
+                  Who paid? *
+                </label>
+                <select
+                  id='payer'
+                  value={formData.payer_id}
+                  onChange={(e) => updateField('payer_id', e.target.value)}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    errors.payer_id ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                >
+                  <option value=''>Select who paid</option>
+                  {groupMembers.map((member) => (
+                    <option key={member.id} value={member.id}>
+                      {member.name}
+                    </option>
+                  ))}
+                </select>
+                {errors.payer_id && <p className='mt-1 text-sm text-red-600'>{errors.payer_id}</p>}
+              </div>
+            </div>
+
+            {/* Split Method */}
+            <div className='space-y-4'>
+              <h3 className='text-lg font-semibold text-gray-900 border-b pb-2'>How to split?</h3>
+
+              <div role='radiogroup' aria-labelledby='split-method-label'>
+                <span id='split-method-label' className='sr-only'>
+                  Split method
+                </span>
+
+                <div className='space-y-3'>
+                  <label className='flex items-center'>
+                    <input
+                      type='radio'
+                      name='split_method'
+                      value='equal'
+                      checked={formData.split_method === 'equal'}
+                      onChange={(e) => updateField('split_method', e.target.value as SplitMethod)}
+                      className='mr-3'
+                    />
+                    <div className='flex items-center'>
+                      <Calculator className='text-blue-500 mr-2' size={16} />
+                      <span className='font-medium'>Equal split</span>
+                      {formData.participants.length > 0 && formData.total_amount && (
+                        <span className='ml-2 text-sm text-gray-600'>
+                          ({formatCurrency(equalSplitAmount)} each)
+                        </span>
+                      )}
+                    </div>
+                  </label>
+
+                  <label className='flex items-center'>
+                    <input
+                      type='radio'
+                      name='split_method'
+                      value='amount'
+                      checked={formData.split_method === 'amount'}
+                      onChange={(e) => updateField('split_method', e.target.value as SplitMethod)}
+                      className='mr-3'
+                    />
+                    <div className='flex items-center'>
+                      <DollarSign className='text-green-500 mr-2' size={16} />
+                      <span className='font-medium'>Custom amounts</span>
+                    </div>
+                  </label>
+
+                  <label className='flex items-center'>
+                    <input
+                      type='radio'
+                      name='split_method'
+                      value='percentage'
+                      checked={formData.split_method === 'percentage'}
+                      onChange={(e) => updateField('split_method', e.target.value as SplitMethod)}
+                      className='mr-3'
+                    />
+                    <div className='flex items-center'>
+                      <span className='text-purple-500 mr-2 text-sm font-bold'>%</span>
+                      <span className='font-medium'>Percentages</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* Participants */}
+            <div className='space-y-4'>
+              <div className='flex items-center justify-between'>
+                <h3 className='text-lg font-semibold text-gray-900'>Participants *</h3>
+                {formData.participants.length > 0 && (
+                  <span className='text-sm text-gray-600'>
+                    {formData.participants.length} selected
+                  </span>
+                )}
+              </div>
+
+              {errors.participants && <p className='text-sm text-red-600'>{errors.participants}</p>}
+
+              <div className='space-y-2 max-h-40 overflow-y-auto'>
+                {groupMembers.map((member) => {
+                  const isSelected = formData.participants.includes(member.id)
+
+                  return (
+                    <div key={member.id} className='border border-gray-200 rounded-lg p-3'>
+                      <div className='flex items-center justify-between'>
+                        <label className='flex items-center cursor-pointer flex-1'>
+                          <input
+                            type='checkbox'
+                            checked={isSelected}
+                            onChange={() => toggleParticipant(member.id)}
+                            className='mr-3'
+                          />
+                          <div className='flex items-center'>
+                            <Users className='text-gray-400 mr-2' size={16} />
+                            <span className='font-medium'>{member.name}</span>
+                            {member.is_placeholder && (
+                              <span className='ml-2 px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded'>
+                                Guest
+                              </span>
+                            )}
+                          </div>
+                        </label>
+
+                        {/* Custom amount/percentage input */}
+                        {isSelected && formData.split_method === 'amount' && (
+                          <div className='ml-4'>
+                            <div className='relative'>
+                              <DollarSign
+                                className='absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400'
+                                size={14}
+                              />
+                              <input
+                                type='number'
+                                step='0.01'
+                                min='0'
+                                value={formData.custom_amounts[member.id] || ''}
+                                onChange={(e) =>
+                                  updateCustomValue(member.id, e.target.value, 'amount')
+                                }
+                                className='w-24 pl-6 pr-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500'
+                                placeholder='0.00'
+                                aria-label={`${member.name} amount`}
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        {isSelected && formData.split_method === 'percentage' && (
+                          <div className='ml-4'>
+                            <div className='relative'>
+                              <input
+                                type='number'
+                                step='0.1'
+                                min='0'
+                                max='100'
+                                value={formData.custom_percentages[member.id] || ''}
+                                onChange={(e) =>
+                                  updateCustomValue(member.id, e.target.value, 'percentage')
+                                }
+                                className='w-20 pr-6 pl-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500'
+                                placeholder='0'
+                                aria-label={`${member.name} percentage`}
+                              />
+                              <span className='absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm'>
+                                %
+                              </span>
+                            </div>
+                          </div>
+                        )}
+
+                        {isSelected && formData.split_method === 'equal' && (
+                          <div className='ml-4 text-sm text-gray-600'>
+                            {formatCurrency(equalSplitAmount)}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Split validation summary */}
+              {formData.split_method === 'amount' && formData.participants.length > 0 && (
+                <div className='p-3 bg-gray-50 rounded-lg'>
+                  <div className='flex justify-between text-sm'>
+                    <span>Total amount:</span>
+                    <span className='font-medium'>
+                      {formatCurrency(parseFloat(formData.total_amount) || 0)}
+                    </span>
+                  </div>
+                  <div className='flex justify-between text-sm'>
+                    <span>Sum of amounts:</span>
+                    <span
+                      className={`font-medium ${
+                        Math.abs(customTotals.amounts - (parseFloat(formData.total_amount) || 0)) >
+                        0.01
+                          ? 'text-red-600'
+                          : 'text-green-600'
+                      }`}
+                    >
+                      {formatCurrency(customTotals.amounts)}
+                    </span>
+                  </div>
+                  {errors.custom_amounts && (
+                    <p className='mt-1 text-sm text-red-600'>{errors.custom_amounts}</p>
+                  )}
+                </div>
+              )}
+
+              {formData.split_method === 'percentage' && formData.participants.length > 0 && (
+                <div className='p-3 bg-gray-50 rounded-lg'>
+                  <div className='flex justify-between text-sm'>
+                    <span>Total percentage:</span>
+                    <span
+                      className={`font-medium ${
+                        Math.abs(customTotals.percentages - 100) > 0.01
+                          ? 'text-red-600'
+                          : 'text-green-600'
+                      }`}
+                    >
+                      {customTotals.percentages.toFixed(1)}%
+                    </span>
+                  </div>
+                  {errors.custom_percentages && (
+                    <p className='mt-1 text-sm text-red-600'>{errors.custom_percentages}</p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className='flex justify-end space-x-3 pt-6 border-t'>
+              <button
+                type='button'
+                onClick={onClose}
+                className='px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500'
+                disabled={isLoading}
+              >
+                Cancel
+              </button>
+              <button
+                type='submit'
+                disabled={isLoading}
+                className='px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed'
+              >
+                {isLoading ? 'Creating...' : 'Create Expense'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
   )
 }

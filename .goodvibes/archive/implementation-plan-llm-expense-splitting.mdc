@@ -388,13 +388,13 @@ Based on the task list in `Tasks/tasks-ai-splits-prd.md`, the following files ne
 *   **Implementation Results:**
     *   ✅ **Expenses Table**: Created with complete schema including JSONB fields for payers/participants, RLS policies, and proper foreign key constraints
     *   ✅ **Database Migration**: Successfully applied 20250601000000_create_expenses_table.sql with all indexes and triggers
-    *   ✅ **Edge Function**: Complete parse-expense function with OpenAI GPT-4 integration, structured prompts, and comprehensive error handling
+    *   ✅ **Edge Function**: Complete parse-expense function with OpenAI o3 integration, structured prompts, and comprehensive error handling
     *   ✅ **NLLExpenseInput.tsx**: Full React component with form validation, API integration, loading states, error handling, and fallback options
     *   ✅ **Type Definitions**: Updated database.ts with complete Expense, ExpensePayer, ExpenseParticipant, and ExpenseItem interfaces
     *   ✅ **Integration**: Component successfully integrated into GroupDetailView for immediate testing
     *   ✅ **Deployment**: Edge Function successfully deployed to Supabase (87.19kB bundle size)
 *   **Technical Details:**
-    *   Edge Function uses GPT-4o with structured JSON output format (optimized for speed and cost)
+    *   Edge Function uses o3 with structured JSON output format (optimized for advanced reasoning and accuracy)
     *   10-second timeout protection with graceful error handling
     *   Comprehensive input validation and amount verification
     *   Support for clarifying questions when input is ambiguous
@@ -713,7 +713,7 @@ This implementation plan for the **LLM Expense Splitting Application** has been 
 ### 🏗️ **Architecture Excellence**
 - **Next.js 15** with App Router and TypeScript strict mode
 - **Supabase** backend with PostgreSQL, RLS policies, and Edge Functions
-- **OpenAI GPT-4** integration with fallback mechanisms and error handling
+- **OpenAI o3** integration with fallback mechanisms and error handling
 - **Performance monitoring** system for success metrics tracking
 
 ### 🧪 **Testing Excellence**
@@ -743,7 +743,7 @@ This implementation plan for the **LLM Expense Splitting Application** has been 
 ## Feature Implementation Status
 
 ### ✅ **Core Features (100% Complete)**
-- **Natural Language Expense Parsing** with OpenAI GPT-4 integration
+- **Natural Language Expense Parsing** with OpenAI o3 integration
 - **Expense Confirmation UI** with LLM assumptions display
 - **Manual Expense Entry** with comprehensive form validation
 - **Settlement Calculation** with debt simplification algorithm

@@ -144,8 +144,8 @@ describe('Monitoring Integration Tests', () => {
     test('tracks LLM integration events', () => {
       const analytics = getAnalytics()
 
-      analytics.trackLLM(true, { model: 'gpt-4', duration: 2000 })
-      analytics.trackLLM(false, { model: 'gpt-4', error: 'rate_limit' })
+      analytics.trackLLM(true, { model: 'o3', duration: 2000 })
+      analytics.trackLLM(false, { model: 'o3', error: 'rate_limit' })
 
       const journey = analytics.getUserJourney()
       const llmEvents = journey.steps.filter((step) =>

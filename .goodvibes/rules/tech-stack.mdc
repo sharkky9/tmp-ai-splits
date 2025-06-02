@@ -65,7 +65,7 @@ alwaysApply: false
     *   **Serverless Functions:** Supabase Edge Functions (Deno runtime, TypeScript)
     *   **Real-time:** Supabase Realtime (for live group updates)
 *   **LLM Service:** OpenAI API
-    *   **Primary Model:** GPT-4 (gpt-4-turbo-preview for cost optimization)
+    *   **Primary Model:** o3 (advanced reasoning for complex expense parsing)
     *   **Fallback Model:** GPT-3.5-turbo (for high-volume or fallback scenarios)
     *   **Integration:** `openai` library (v4.x) within Supabase Edge Functions
     *   **Cost Management:** Rate limiting, request batching, response caching
@@ -158,10 +158,10 @@ alwaysApply: false
 ## 5. External APIs & Services
 
 *   **OpenAI API:**
-    *   **Models:** GPT-4o (primary for expense parsing), GPT-3.5-turbo (fallback)
+    *   **Models:** o3 (primary for expense parsing), GPT-3.5-turbo (fallback)
     *   **Usage:** Natural language expense parsing and interpretation via Supabase Edge Functions
     *   **Integration:** `openai` library (v4.20.1) within Supabase Edge Functions (Deno runtime)
-    *   **Rate Limits:** 10,000 TPM (tokens per minute) for GPT-4o
+    *   **Rate Limits:** Optimized for o3 advanced reasoning capabilities
     *   **Cost Management:** 10-second timeout, structured JSON responses, prompt optimization
     *   **Response Format:** Structured JSON with confidence scoring and assumption tracking
     *   **Error Handling:** Comprehensive validation, graceful degradation, clarifying questions
