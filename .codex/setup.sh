@@ -1,3 +1,4 @@
+pnpm install --force --prefer-offline
 #!/usr/bin/env bash
 set -euo pipefail
 
