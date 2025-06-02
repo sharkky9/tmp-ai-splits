@@ -247,7 +247,8 @@ describe('Monitoring Integration Tests', () => {
       expect(typeof Sentry.captureException).toBe('function')
       expect(typeof Sentry.setUser).toBe('function')
       expect(typeof Sentry.withScope).toBe('function')
-      expect(typeof Sentry.startTransaction).toBe('function')
+      // Note: startTransaction is deprecated in newer Sentry versions, replaced with startSpan
+      expect(typeof Sentry.startSpan).toBe('function')
     })
   })
 

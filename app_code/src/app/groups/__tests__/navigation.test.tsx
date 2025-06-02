@@ -193,7 +193,7 @@ describe('Step 4: Group Navigation Flows', () => {
 
       render(
         <TestWrapper>
-          <GroupDetailPage params={{ groupId: 'test-group-id' }} />
+          <GroupDetailPage params={Promise.resolve({ groupId: 'test-group-id' })} />
         </TestWrapper>
       )
 
@@ -213,7 +213,7 @@ describe('Step 4: Group Navigation Flows', () => {
 
       render(
         <TestWrapper>
-          <GroupDetailPage params={{ groupId: 'test-group-id' }} />
+          <GroupDetailPage params={Promise.resolve({ groupId: 'test-group-id' })} />
         </TestWrapper>
       )
 
@@ -232,7 +232,7 @@ describe('Step 4: Group Navigation Flows', () => {
     test('test_browser_back_navigation_works', () => {
       render(
         <TestWrapper>
-          <GroupDetailPage params={{ groupId: 'test-group-id' }} />
+          <GroupDetailPage params={Promise.resolve({ groupId: 'test-group-id' })} />
         </TestWrapper>
       )
 
@@ -244,7 +244,7 @@ describe('Step 4: Group Navigation Flows', () => {
     test('test_browser_forward_navigation_works', () => {
       render(
         <TestWrapper>
-          <GroupDetailPage params={{ groupId: 'test-group-id' }} />
+          <GroupDetailPage params={Promise.resolve({ groupId: 'test-group-id' })} />
         </TestWrapper>
       )
 
@@ -313,7 +313,7 @@ describe('Step 4: Group Navigation Flows', () => {
 
       render(
         <TestWrapper>
-          <GroupDetailPage params={{ groupId: 'invalid-group-id' }} />
+          <GroupDetailPage params={Promise.resolve({ groupId: 'invalid-group-id' })} />
         </TestWrapper>
       )
 
@@ -352,7 +352,7 @@ describe('Step 4: Group Navigation Flows', () => {
 
       render(
         <TestWrapper>
-          <GroupDetailPage params={{ groupId: 'test-group-id' }} />
+          <GroupDetailPage params={Promise.resolve({ groupId: 'test-group-id' })} />
         </TestWrapper>
       )
 

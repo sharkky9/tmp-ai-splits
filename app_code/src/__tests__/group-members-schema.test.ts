@@ -5,11 +5,22 @@ describe('Group Members Schema Integration Tests', () => {
   const mockUser = {
     id: 'test-user-id',
     email: 'test@example.com',
+    app_metadata: {},
+    user_metadata: {},
+    aud: 'authenticated',
+    created_at: '2023-01-01T00:00:00Z',
+    email_confirmed_at: '2023-01-01T00:00:00Z',
+    last_sign_in_at: '2023-01-01T00:00:00Z',
+    role: 'authenticated',
   }
 
   const mockSession = {
     user: mockUser,
     access_token: 'fake-token',
+    refresh_token: 'fake-refresh-token',
+    expires_in: 3600,
+    token_type: 'bearer',
+    expires_at: Date.now() / 1000 + 3600,
   }
 
   beforeEach(() => {
@@ -22,7 +33,13 @@ describe('Group Members Schema Integration Tests', () => {
     jest.spyOn(supabase.auth, 'onAuthStateChange').mockImplementation((callback) => {
       callback('SIGNED_IN', mockSession)
       return {
-        data: { subscription: { unsubscribe: jest.fn() } },
+        data: { 
+          subscription: { 
+            unsubscribe: jest.fn(),
+            id: 'mock-subscription-id',
+            callback: jest.fn()
+          } 
+        },
       }
     })
   })
@@ -117,9 +134,9 @@ describe('Group Members Schema Integration Tests', () => {
     expect(result.error).toBeNull()
     expect(result.data).toBeDefined()
     expect(result.data).toHaveLength(1)
-    expect(result.data[0]).toHaveProperty('created_at')
-    expect(result.data[0]).toHaveProperty('updated_at')
-    expect(result.data[0]).toHaveProperty('joined_at')
+    expect(result.data?.[0]).toHaveProperty('created_at')
+    expect(result.data?.[0]).toHaveProperty('updated_at')
+    expect(result.data?.[0]).toHaveProperty('joined_at')
   })
 
   /**
@@ -235,8 +252,8 @@ describe('Group Members Schema Integration Tests', () => {
     expect(memberResult.error).toBeNull()
     expect(memberResult.data).toBeDefined()
     expect(memberResult.data).toHaveLength(1)
-    expect(memberResult.data[0]).toHaveProperty('created_at')
-    expect(memberResult.data[0]).toHaveProperty('updated_at')
+    expect(memberResult.data?.[0]).toHaveProperty('created_at')
+    expect(memberResult.data?.[0]).toHaveProperty('updated_at')
   })
 
   /**

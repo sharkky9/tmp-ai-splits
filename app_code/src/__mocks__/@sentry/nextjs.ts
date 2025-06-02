@@ -10,7 +10,7 @@ export const startSpan = jest.fn((options, callback) => {
       const result = callback(mockSpan)
       // If callback returns a promise, handle it for async spans
       if (result && typeof result.then === 'function') {
-        return result.catch((error) => {
+        return result.catch((error: any) => {
           // Simulate Sentry behavior of re-throwing the error
           throw error
         })

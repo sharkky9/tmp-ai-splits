@@ -11,8 +11,7 @@ import {
 describe('Performance Monitoring', () => {
   beforeEach(() => {
     performanceMonitor.clearMetrics()
-    // Mock sendAnalyticsEvent to prevent actual fetch calls during tests
-    jest.spyOn(performanceMonitor, 'sendAnalyticsEvent').mockImplementation(() => {})
+    // No need to mock private methods for unit tests
   })
 
   describe('Expense Logging Metrics', () => {

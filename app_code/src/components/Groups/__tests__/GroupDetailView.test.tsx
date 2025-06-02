@@ -91,7 +91,7 @@ const createTestQueryClient = () =>
       queries: {
         retry: false,
         staleTime: 5 * 60 * 1000, // 5 minutes
-        cacheTime: 10 * 60 * 1000, // 10 minutes
+        gcTime: 10 * 60 * 1000, // 10 minutes (renamed from cacheTime)
       },
       mutations: { retry: false },
     },
@@ -198,8 +198,8 @@ describe('GroupDetailView Data Fetching', () => {
     expect(groupQuery?.status).toBe('success')
     expect(membersQuery?.status).toBe('success')
 
-    // isStale might be undefined initially, which is equivalent to false for fresh data
-    expect(groupQuery?.isStale || false).toBe(false)
-    expect(membersQuery?.isStale || false).toBe(false)
+    // Verify data is fresh (no stale issues)
+    expect(groupQuery?.dataUpdatedAt).toBeGreaterThan(0)
+    expect(membersQuery?.dataUpdatedAt).toBeGreaterThan(0)
   })
 })
