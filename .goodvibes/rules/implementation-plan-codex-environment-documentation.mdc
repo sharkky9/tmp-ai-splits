@@ -1,0 +1,168 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+<!--
+<vibeSpec>
+    <purpose>Document the successful resolution of Codex environment setup issues and update core documents with testing standards and best practices.</purpose>
+    <scope>Updates to tech-stack.mdc, good-vibes.mdc, and creation of a backlog item for future Codex environment maintenance.</scope>
+    <nonScope>Does not modify the actual test implementations (already complete), focuses only on documentation updates.</nonScope>
+    <usageNotes>This plan captures the successful resolution of Codex environment setup issues that resulted in 100% test suite success and establishes standards for future development.</usageNotes>
+</vibeSpec>
+-->
+
+# Implementation Plan: Codex Environment Documentation Update
+
+## Summary
+
+**Objective**: Document the successful resolution of Codex environment setup issues and establish testing standards for future development.
+
+**Background**: The Codex environment setup was initially failing with:
+- 7 out of 99 tests failing
+- Supabase mock structure issues
+- TypeScript compilation errors
+- ESLint violations
+
+**Resolution Achieved**: 
+- ✅ 14/14 test suites passing (100% success rate)
+- ✅ 100/100 tests passing (perfect score)
+- ✅ 0 TypeScript compilation errors
+- ✅ 0 ESLint warnings or errors
+- ✅ <4 second test execution time
+
+## Step 0: Test Scaffold
+
+*Validation that documentation updates are needed and current state verification*
+
+### Test Stubs
+1. **Documentation Coverage Check**: Verify current docs don't reflect recent Codex environment success
+2. **Core Document Review**: Confirm tech-stack.mdc and good-vibes.mdc need testing section updates
+
+### Validation Criteria
+- Documentation gaps identified in testing standards
+- Current Codex environment success not properly documented
+- Missing best practices for future developers
+
+## Step 1: Update tech-stack.mdc Testing Section
+
+### Objective
+Enhance the Testing section in tech-stack.mdc to reflect our successful test infrastructure and Codex environment compatibility.
+
+### Tasks
+1. **Expand Jest Configuration Details**:
+   - Add version numbers and configuration status
+   - Document test environment (jsdom)
+   - Include performance metrics (100% success rate, <4 second execution)
+   - Add mocking strategy details
+
+2. **Enhance React Testing Library Section**:
+   - Add version numbers and integration details
+   - Document best practices and async testing patterns
+   - Include accessibility-aware testing approaches
+
+3. **Add Codex Environment Compatibility Section**:
+   - Document successful resolution of Supabase mock chaining
+   - Include Next.js 15 Promise params handling solutions
+   - Add React Query test configuration best practices
+   - Document ESLint compliance requirements
+
+4. **Document Test Categories**:
+   - Unit tests: Component behavior, utilities, business logic
+   - Integration tests: Component interaction, data flow, auth
+   - Navigation tests: React Router, page transitions, error boundaries
+   - Database tests: Schema validation, RLS policies, data integrity
+   - Performance tests: Load times, analytics, monitoring
+
+### Success Criteria
+- Tech-stack.mdc accurately reflects current robust testing infrastructure
+- Codex environment compatibility clearly documented
+- Future developers have clear guidance on testing standards
+
+## Step 2: Update good-vibes.mdc Testing Standards
+
+### Objective
+Add Codex Environment Standards to the Testing section for consistent development practices.
+
+### Tasks
+1. **Add Codex Environment Standards Subsection**:
+   - 100% Test Suite Success requirement (14/14 suites, 100/100 tests)
+   - Mock strategy guidelines (Supabase method chaining)
+   - React Query testing configuration standards
+   - Next.js 15 compatibility requirements
+   - Test isolation best practices
+   - Performance targets (<4 seconds execution)
+   - ESLint compliance requirements
+
+### Success Criteria
+- Clear testing standards for Codex environment compatibility
+- Comprehensive guidelines for mock strategies
+- Performance benchmarks established
+- ESLint compliance requirements documented
+
+## Step 3: Create Development Environment Reference
+
+### Objective
+Enhance the minimal dev_environment.mdc with Codex-specific guidance.
+
+### Tasks
+1. **Expand dev_environment.mdc**:
+   - Add Codex environment setup best practices
+   - Document common Supabase mock patterns
+   - Include React Query test configuration templates
+   - Add troubleshooting guide for test failures
+
+### Success Criteria
+- Developers have clear Codex environment setup guidance
+- Common issues and solutions documented
+- Test configuration templates available
+
+## Step 4: Version and Commit Documentation Updates
+
+### Objective
+Ensure all documentation updates are properly versioned and available for Codex download.
+
+### Tasks
+1. **Review all changes for consistency**
+2. **Run formatting and linting on updated docs**
+3. **Commit changes with descriptive message**
+4. **Push to remote repository for Codex access**
+
+### Success Criteria
+- All documentation updates committed to Git
+- Changes available for Codex environment download
+- Consistent formatting across all updated documents
+
+## Implementation Notes
+
+### Key Achievements to Document
+- **Supabase Mock Resolution**: Fixed method chaining issues (`.eq().order()`)
+- **React Query Configuration**: Proper test client setup with cache management
+- **Next.js 15 Compatibility**: Promise params handling in navigation tests
+- **Test Performance**: Complete test suite execution in <4 seconds
+- **Error Resolution**: Eliminated TypeScript compilation and ESLint errors
+
+### Best Practices Established
+1. **Test-Driven Debugging**: Create failing tests to validate fixes
+2. **Mock Strategy**: Comprehensive Supabase mocking with proper chaining
+3. **Test Isolation**: Proper cleanup with `afterEach(() => jest.clearAllMocks())`
+4. **Performance Targets**: <4 second test execution requirement
+5. **Quality Gates**: 100% test success rate before commits
+
+### Future Maintenance Considerations
+- Regular validation of Codex environment compatibility
+- Periodic review of test performance metrics
+- Updates to mocking strategies as dependencies evolve
+- Documentation updates for new testing patterns
+
+## References
+
+- **Original Issue**: Codex environment setup failing with test suite errors
+- **Resolution Commit**: "Fix Codex environment setup: Resolve test suite failures"
+- **Test Results**: 14/14 test suites passing, 100/100 tests passing
+- **Performance**: <4 second execution time achieved
+- **Quality**: 0 TypeScript errors, 0 ESLint warnings
+
+---
+
+*This implementation plan documents the successful resolution of Codex environment setup issues and establishes standards for future development.*
