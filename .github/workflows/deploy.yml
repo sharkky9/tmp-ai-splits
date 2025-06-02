@@ -18,18 +18,23 @@ jobs:
         with:
           node-version: '18' # Or your project's node version
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
       - name: Install Dependencies
         working-directory: ./app_code # Assuming your app is in app_code/
-        run: npm install # Or pnpm install / yarn install based on your project
+        run: pnpm install # Or pnpm install / yarn install based on your project
 
       - name: Run Lint Check
         working-directory: ./app_code # Assuming your app is in app_code/
-        run: npm run lint # Or your specific lint command
+        run: pnpm run lint # Or your specific lint command
 
       # Add test step if you have one, e.g.:
       # - name: Run Tests
       #   working-directory: ./app_code # Assuming your app is in app_code/
-      #   run: npm run test # Or your specific test command
+      #   run: pnpm run test # Or your specific test command
       #   env:
       #     # Add any necessary environment variables for your tests here
       #     # Example: CI_ENV_VAR: ${{ secrets.YOUR_TEST_SECRET }}
