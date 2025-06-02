@@ -57,8 +57,8 @@ jobs:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
       - name: Build Project Artifacts
-        working-directory: ./app_code # Vercel commands should run from the project root
-        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: ./app_code
+        run: vercel build ${{ github.ref_name == 'main' && '--prod' || '' }} --token=${{ secrets.VERCEL_TOKEN }}
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
