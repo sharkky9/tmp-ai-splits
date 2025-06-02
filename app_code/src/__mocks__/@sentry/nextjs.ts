@@ -1,4 +1,4 @@
-export const startSpan = jest.fn((options, callback) => {
+export const startSpan = jest.fn((options: unknown, callback?: (span: unknown) => unknown) => {
   // If callback is provided, execute it
   if (callback) {
     try {
@@ -9,8 +9,8 @@ export const startSpan = jest.fn((options, callback) => {
       }
       const result = callback(mockSpan)
       // If callback returns a promise, handle it for async spans
-      if (result && typeof result.then === 'function') {
-        return result.catch((error: any) => {
+      if (result && typeof result === 'object' && result !== null && 'then' in result) {
+        return (result as Promise<unknown>).catch((error: unknown) => {
           // Simulate Sentry behavior of re-throwing the error
           throw error
         })
@@ -30,7 +30,7 @@ export const startSpan = jest.fn((options, callback) => {
 export const setTag = jest.fn()
 export const setUser = jest.fn()
 export const captureException = jest.fn()
-export const withScope = jest.fn((callback) => {
+export const withScope = jest.fn((callback: (scope: unknown) => void) => {
   const mockScope = {
     setTag: jest.fn(),
     setUser: jest.fn(),

@@ -33,12 +33,12 @@ describe('Group Members Schema Integration Tests', () => {
     jest.spyOn(supabase.auth, 'onAuthStateChange').mockImplementation((callback) => {
       callback('SIGNED_IN', mockSession)
       return {
-        data: { 
-          subscription: { 
+        data: {
+          subscription: {
             unsubscribe: jest.fn(),
             id: 'mock-subscription-id',
-            callback: jest.fn()
-          } 
+            callback: jest.fn(),
+          },
         },
       }
     })
