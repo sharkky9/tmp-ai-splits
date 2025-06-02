@@ -18,6 +18,3 @@ export default function GroupDetailPage({ params }: GroupPageProps) {
     </div>
   )
 }
-
-// Revalidate data at most every 60 seconds, or on demand
-export const revalidate = 60

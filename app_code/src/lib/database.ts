@@ -27,10 +27,16 @@ export interface Expense {
 }
 
 export interface GroupMember {
+  id?: string // UUID, primary key (optional for backward compatibility)
   group_id: string
-  user_id: string
+  user_id: string | null // nullable for placeholder members
   role: string
-  joined_at: string
+  is_placeholder?: boolean // optional for backward compatibility
+  placeholder_name?: string | null // optional for backward compatibility
+  email?: string | null // optional for backward compatibility
+  joined_at: string // domain-specific timestamp
+  created_at?: string // standard audit column (optional for backward compatibility)
+  updated_at?: string // standard audit column (optional for backward compatibility)
 }
 
 interface Payer {

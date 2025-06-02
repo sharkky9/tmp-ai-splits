@@ -2,19 +2,20 @@
 <promptSpec>
     <goal>To create a detailed, step-by-step implementation-plan-[feature-name].mdc for a new feature through an iterative two-phase process: (1) thorough requirements gathering via comprehensive questions, and (2) implementation plan generation.</goal>
     <usage>
-        <scenario>Use at the start of a new feature.</scenario>
+        <scenario>Use at the start of a new feature, or when creating an implementation plan for an item from .goodvibes/rules/backlog.mdc.</scenario>
         <tooling>Intended for a frontier AI model (e.g., browser) with broad context access (e.g., RepoPrompt).</tooling>
         <placeholders>
             <placeholder name="[feature-name]">The specific name for the feature (used in the output filename).</placeholder>
-            <placeholder name="[feature-description]">A clear and detailed description of the feature.</placeholder>
+            <placeholder name="[feature-description]">A clear and detailed description of the feature. If from a backlog item, include its details here.</placeholder>
             <placeholder name="[relevant-code]">Snippets of existing code relevant to the new feature.</placeholder>
+            <placeholder name="[backlog-item-id]" optional="true">The ID of the backlog item this plan is for (if applicable). This helps in linking and updating the backlog item.</placeholder>
         </placeholders>
-        <notes>The AI is instructed to use existing .goodvibes/rules/ documents (architecture.mdc, design.mdc, tech-stack.mdc, rules.mdc) and style guides for context. The output plan should be saved to .goodvibes/rules/implementation-plan-[feature-name].mdc. The process is iterative, with the AI asking clarifying questions until sufficient context is gathered before generating the plan.</notes>
+        <notes>The AI is instructed to use existing .goodvibes/rules/ documents (architecture.mdc, design.mdc, tech-stack.mdc, rules.mdc, backlog.mdc) and style guides for context. The output plan should be saved to .goodvibes/rules/implementation-plan-[feature-name].mdc. If a [backlog-item-id] is provided, the generated plan should include actions in its final step(s) to update the status of this item in .goodvibes/rules/backlog.mdc and to ensure the implementation plan link is correctly recorded in the backlog item.</notes>
     </usage>
     <nextSteps>
         <step>Engage in the iterative questioning process to ensure all aspects of the feature are well understood.</step>
         <step>Review the generated .goodvibes/rules/implementation-plan-[feature-name].mdc.</step>
-        <step>Check for: clarity, logical flow, atomic steps, TDD (tests before code), inclusion of Step 0: Test Scaffold and Step n: Clean Up and Testing, validation criteria, risk assessment per step, and core document update identification.</step>
+        <step>Check for: clarity, logical flow, atomic steps, TDD, inclusion of Step 0 (Test Scaffold) and Step n (Clean Up, Testing, and Backlog Update if applicable), validation criteria, risk assessment, and core document update identification.</step>
         <step>Manually refine the plan as needed before starting implementation.</step>
     </nextSteps>
 </promptSpec>
@@ -22,9 +23,8 @@
 Feature Request:
 Name: [feature-name]
 Description: [feature-description]
-
-Relevant code or context:
-[relevant-code]
+Relevant code or context: [relevant-code]
+(Optional) Corresponding Backlog Item ID: [backlog-item-id]
 
 To create an effective implementation plan, you need to understand this feature from both user and technical perspectives. Ask the following questions (and any follow-ups needed):
 
@@ -53,10 +53,10 @@ Ask clarifying follow-up questions until you have a complete understanding of th
 
 Once you have sufficient information, create a detailed implementation plan that:
 
-- Will be saved as `.goodvibes/rules/implementation-plan-[feature-name].mdc` following the structure in `.goodvibes/rules/good-vibes.md`
-- Includes a "Relevant Files" section listing all files to be created or modified with brief descriptions
-- Defines clear "Success Metrics" based on the gathered information
-- Breaks down the implementation into small, atomic steps that can be independently implemented and validated
+- Will be saved as `.goodvibes/rules/implementation-plan-[feature-name].mdc` following the structure in `.goodvibes/rules/good-vibes.md`.
+- Includes a "Relevant Files" section listing all files to be created or modified with brief descriptions.
+- Defines clear "Success Metrics" based on the gathered information.
+- Breaks down the implementation into small, atomic steps that can be independently implemented and validated.
 
 Each step should include:
 - Goal: Clear objective for the step
@@ -68,7 +68,11 @@ Each step should include:
 
 The plan should begin with "Step 0: Test Scaffold" and end with "Step n: Clean Up and Testing".
 
-Use the following format as a guide:
+**If a `[backlog-item-id]` was provided in the request, ensure the "Step n: Clean Up and Testing" (or a dedicated final step) includes specific actions to:**
+1.  **Update the status of `[backlog-item-id]` in `.goodvibes/rules/backlog.mdc`** (e.g., to "Implemented" or "Closed").
+2.  **Verify/add the link to this implementation plan (`.goodvibes/rules/implementation-plan-[feature-name].mdc`) within the specified `[backlog-item-id]` entry in `.goodvibes/rules/backlog.mdc`.**
+
+Use the following format as a guide, paying attention to the modified "Step n" if a backlog item is involved:
 
 ```markdown
 ---
@@ -80,6 +84,8 @@ alwaysApply: false
 # Implementation Plan: Feature Z
 
 **Goal:** [Overall goal of this plan, e.g., To implement a new service for processing Z-type data and exposing it via an API endpoint.]
+
+**(If applicable) Related Backlog Item ID:** [backlog-item-id]
 
 ## Implementation Context
 
@@ -102,113 +108,61 @@ alwaysApply: false
 
 - `src/services/feature_z_service.py` - **NEW** - Core service implementing Feature Z functionality
 - `src/services/feature_z_service_test.py` - **NEW** - Unit tests for Feature Z service
-- `src/api/routes/feature_z_routes.py` - **NEW** - API endpoints for Feature Z
-- `src/api/routes/feature_z_routes_test.py` - **NEW** - Tests for Feature Z API routes
-- `src/ui/components/FeatureZComponent.jsx` - **NEW** - UI component for Feature Z
-- `src/ui/components/FeatureZComponent.test.jsx` - **NEW** - Tests for Feature Z component
-- `src/services/upload_service.py` - **MODIFY** - Update to handle Z-type data files
-- `src/ui/components/Dashboard.jsx` - **MODIFY** - Integrate Feature Z visualization panel
+# ... other files ...
 
 ## Core Documents Affected
 
 - `architecture.mdc` - Add Feature Z service in the data processing section (Step 1)
-  - Document new service interactions with existing components
-  - Update data flow diagrams to include Z-data processing
 - `design.mdc` - Add new user flows for Feature Z (Step 4)
-  - Include wireframes for Z-data visualization panel
-  - Document user interaction patterns for configuration options
 - `tech-stack.mdc` - Add new visualization library dependencies (Step 2)
 
 ## Success Metrics
 - Processing time for Z-data files under 5 seconds for files up to 50MB
 - UI response time under 200ms when interacting with visualization
 - 95% test coverage for new components
-- All accessibility requirements met for visualization components
 
 ## Step 0: Test Scaffolding
 *   **Goal:** Enumerate all behavioral specifications for Feature Z as initially failing test stubs.
 *   **Actions:**
-    1.  **Test Stubs:** For each requirement of Feature Z, create a corresponding failing unit test stub in `tests/features/test_featureZ_service.py`. Examples:
-        *   `test_featureZ_handles_null_input()`
-        *   `test_featureZ_processes_valid_data_correctly()`
-        *   `test_featureZ_reports_specific_error_on_X_condition()`
-*   **Validation:**
-    *   All created test stubs for Feature Z are present in `tests/features/test_featureZ_service.py`.
-    *   Running `pytest tests/features/test_featureZ_service.py` shows all new tests for Feature Z as *failing*.
-*   **Risks:**
-    *   Initial requirements for Feature Z are vague on error handling details, so test stubs for failure conditions might be incomplete.
-    *   Overlooking a key external dependency for Feature Z during initial test design could lead to significant rework later.
+    1.  **Test Stubs:** For each requirement of Feature Z, create a corresponding failing unit test stub in `tests/features/test_featureZ_service.py`.
+*   **Validation:** All created test stubs for Feature Z are present and failing.
+*   **Risks:** Incomplete requirements leading to incomplete test stubs.
 *   **Core Document Updates:** None for this step.
 *   **Progress:** Not Started
 
 ## Step 1: Setup Feature Z Module
 *   **Goal:** Create the basic file structure and initial class/component for Feature Z.
-*   **Actions:**
-    1.  Create a new directory: `src/features/featureZ/`.
-    2.  Create `src/features/featureZ/__init__.py`.
-    3.  Create `src/features/featureZ/featureZ_service.py`.
-    4.  Define a basic class `FeatureZService` in `featureZ_service.py` with an `__init__` method that accepts `config: AppConfig` and stores it.
-    5.  **Test:** Create `tests/features/test_featureZ_service.py` (if not already done in Step 0, or add to it). Write/update a unit test that imports `FeatureZService` and successfully instantiates it with a mock config. Ensure this test passes.
-*   **Validation:**
-    *   Verify the directory structure and files exist.
-    *   Run the unit test for instantiation; it must pass.
-*   **Risks:**
-    *   Choosing an overly generic name for `FeatureZService` could lead to naming conflicts if other 'Z-like' features are added later.
-    *   Not defining a clear interface or contract for `FeatureZService` early on might make future mocking or alternative implementations difficult.
-    *   Forgetting to add the new `src/features/featureZ/` path to `.gitignore` or linter configurations if it's a new top-level feature directory.
+*   **Actions:** Create directory, init files, basic class `FeatureZService`.
+    1. Create `src/features/featureZ/featureZ_service.py` etc.
+    2. **Test:** Instantiate `FeatureZService` successfully.
+*   **Validation:** Directory structure and files exist; instantiation test passes.
+*   **Risks:** Naming conflicts; unclear interface.
 *   **Core Document Updates:** `architecture.mdc` (add new module description).
-*   **Progress:** Not Started
-
-## Step 2: Implement Core Logic
-*   **Goal:** Implement core data processing functions for the service
-*   **Actions:**
-    1.  Add `process_data` method to `FeatureZService` that takes input dictionary of raw data, validates required fields and data types, returns formatted data dictionary
-    2.  Add `transform_data` method that takes processed data dictionary, applies business rules and transformations, returns list of transformed data records
-    3.  Add `generate_output` method that takes list of transformed data records, formats into required output string format
-    4.  **Test:** Add unit tests for each method in `tests/features/test_featureZ_service.py`:
-        - `test_process_data`: Test validation of required fields, data types, formatting
-        - `test_transform_data`: Test business rule application and transformations
-        - `test_generate_output`: Test output string formatting
-*   **Validation:**
-    *   All unit tests for these methods must pass.
-    *   Manual verification of output format matches requirements (if applicable for this stage).
-*   **Risks:**
-    *   The `process_data` method might become a bottleneck if it performs complex synchronous operations on large datasets without considering asynchronous processing or batching.
-    *   Business rules for `transform_data` are based on current assumptions; if these rules change frequently, the transformation logic could become brittle without a more flexible rule engine.
-    *   The `generate_output` formatting could be tightly coupled to a specific consumer; if multiple output formats are needed later, this step will require significant refactoring.
-*   **Core Document Updates:** `architecture.mdc` (update module description with new data processing capabilities).
 *   **Progress:** Not Started
 
 # ... subsequent steps ...
 
-## Step n: Cleanup and Testing
-*   **Goal:** Ensure the feature's codebase is pristine, adheres to all project standards (style, naming, comments), is consistent with the existing codebase, all temporary development artifacts are removed, any minor pending issues are resolved, and all feature-related tests pass successfully. The code should be commit-ready and production-quality.
+## Step n: Cleanup, Testing, and Backlog Update (if applicable)
+*   **Goal:** Ensure the feature's codebase is pristine, all tests pass, core documents are updated, and if this plan is for a backlog item, that item is correctly updated in `.goodvibes/rules/backlog.mdc`.
 *   **Actions:**
     1.  **Code Review & Refinement:** Conduct a thorough review of all code implemented for the feature.
-    2.  **Remove Temporary Artifacts:** Delete all temporary logging statements (e.g., `print()`, `console.log()`), debug flags/variables, commented-out old code, and any other development-specific constructs.
-    3.  **Resolve Minor Issues:** Address any minor outstanding issues, TODOs, or FIXMEs that were noted during development and deferred for this final cleanup phase.
-    4.  **Adherence to Standards & Consistency Review:**
-        *   Verify all new/modified code against the project's context documents including `tech-stack.mdc` and any style guides in `.goodvibes/rules/style-guides/`.
-        *   Ensure all functions, classes, and complex logic blocks have clear and appropriate comments.
-        *   Check for consistent and meaningful variable names, function names, and class names, both within new files and in relation to the existing codebase.
-        *   Review for overall consistency with the architecture and patterns of the existing codebase.
-        *   Perform any necessary refactoring to meet these standards and improve code clarity or maintainability.
-    5.  **Comprehensive Test Execution:** Run the entire suite of tests associated with the feature. This includes all tests created in 'Step 0: Test Scaffolding' as well as any unit, integration, or other tests developed throughout the implementation steps.
-    6.  **Address Test Failures (if any):** If any tests fail, diagnose the root cause and implement the necessary corrections. Re-run tests until all pass.
+    2.  **Remove Temporary Artifacts:** Delete all temporary logging, debug flags, etc.
+    3.  **Resolve Minor Issues:** Address any minor outstanding TODOs or FIXMEs.
+    4.  **Adherence to Standards & Consistency Review:** Verify against `tech-stack.mdc`, style guides. Ensure clear comments, consistent naming.
+    5.  **Comprehensive Test Execution:** Run all feature-related tests.
+    6.  **Address Test Failures (if any):** Diagnose and correct.
+    7.  **(If plan is for a backlog item [backlog-item-id]):**
+        a.  **Edit `.goodvibes/rules/backlog.mdc`:**
+            i.  Locate the item with **Item ID:** `[backlog-item-id]`.
+            ii. Update its **Status:** field to "Implemented" (or "Closed", as appropriate).
+            iii.Ensure the **Implementation Plan Link:** field correctly points to this file (e.g., `.goodvibes/rules/implementation-plan-[feature-name].mdc`). Add or verify it.
+        b.  **Confirm Backlog Update:** Briefly note that the backlog item `[backlog-item-id]` has been updated.
 *   **Validation:**
-    *   Manual code inspection confirms that no temporary or debug-specific code remains in the feature's modules.
-    *   Code adheres to all guidelines in `c` and `tech-stack.mdc`.
-    *   Functions and classes are well-commented; variable and function naming is clear and consistent.
-    *   The new code is consistent with the overall architecture and patterns of the existing codebase.
-    *   All automated tests related to the feature (e.g., in `tests/features/test_featureZ_service.py` and any other relevant test suites) execute and pass successfully.
-    *   The feature functions as expected according to all defined requirements and acceptance criteria.
-    *   Code linting and static analysis tools report no new issues for the feature's codebase.
-    *   The codebase for the feature is confirmed to be in a clean, polished, and commit-ready state.
-*   **Risks:**
-    *   Overlooking some deeply embedded temporary code or debug flags.
-    *   Introducing a regression while fixing a minor issue, refactoring, or removing temporary code.
-    *   Tests might have had an implicit dependency on some temporary code, causing them to fail after cleanup.
-    *   Refactoring for consistency could inadvertently alter behavior if not carefully tested.
-    *   Style or naming convention debates could slow down this step if not clearly defined in guides.
-*   **Core Document Updates:** `tech-stack.mdc` might need an update if any specific debugging tools or temporary libraries were used and are now confirmed to be removed. 
+    *   No temporary code remains.
+    *   Code adheres to all guidelines.
+    *   All tests pass.
+    *   Feature functions as expected.
+    *   **(If applicable):** The specified `[backlog-item-id]` in `.goodvibes/rules/backlog.mdc` shows Status: Implemented (or Closed) and has the correct link to this implementation plan.
+*   **Risks:** Overlooking temporary code; regressions during cleanup; backlog item not found or incorrectly updated.
+*   **Core Document Updates:** `tech-stack.mdc` (if any temporary tools removed). Final check of `architecture.mdc`, `design.mdc` for consistency.
 *   **Progress:** Not Started

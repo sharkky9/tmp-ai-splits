@@ -1,0 +1,595 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+<!--
+# Project Backlog
+
+This backlog is a list of items (features, bugs, technical debt, ideas) that are not currently in active development but are being tracked for future consideration. Each item should provide enough detail to be understood, prioritized, and eventually moved into an implementation plan if approved.
+
+## Backlog Item Template
+
+---
+**Item ID:** [Unique Identifier, e.g., BKLOG-YYYYMMDD-001 or a short, descriptive slug]
+**Title:** [Concise Title of the Backlog Item]
+
+**Date Added:** YYYY-MM-DD
+**Reported By:** [Name/Team/Source, e.g., "Dev Team during Sprint X", "User Feedback", "Testing Phase for Feature Y"]
+**Status:** [Open | Under Review | Approved for Planning | Planned | In Progress | Implemented | Deferred | Won't Fix]
+**Priority:** [Critical | High | Medium | Low | TBD]
+**Estimated Effort:** [XS | S | M | L | XL | TBD (e.g., Story Points, T-Shirt Size, Hours/Days)]
+**Tags/Category:** [e.g., Bug, Feature, Refactor, Tech Debt, UI/UX, API, Database, Security, Performance]
+
+**1. Problem Description / User Story / Business Need:**
+   - What specific problem does this item address, or what user need does it fulfill?
+   - Who are the primary users or stakeholders affected?
+   - What is the current situation, and what is the desired outcome?
+   - If applicable, provide user stories (e.g., "As a [user type], I want [action] so that [benefit]").
+
+**2. Proposed Solution / Scope (Optional - High Level):**
+   - Briefly outline any initial thoughts on a potential solution or approach.
+   - What are the key functionalities or components likely to be involved?
+   - What is explicitly IN SCOPE for this item if it were to be implemented?
+   - What is explicitly OUT OF SCOPE for this item?
+
+**3. Justification / Value / Impact:**
+   - Why is this item important to address?
+   - What is the anticipated business value, user benefit, or technical improvement?
+   - What is the potential impact if this item is NOT addressed (e.g., ongoing issues, missed opportunities)?
+
+**4. Technical Considerations & Potential Impact on Core Documents:**
+   - Initial thoughts on the technical approach, challenges, or dependencies.
+   - Are there any specific technologies, libraries, or architectural patterns to consider?
+   - **Potential impact on `architecture.mdc`:** [e.g., "May require a new microservice for X", "Could alter data flow between Y and Z", "No significant impact expected"]
+   - **Potential impact on `design.mdc`:** [e.g., "Will introduce new UI screens for X", "Requires changes to existing user workflow Y", "No significant UI/UX changes expected"]
+   - **Potential impact on `tech-stack.mdc`:** [e.g., "Might necessitate adding library X for Y functionality", "Could involve upgrading component Z", "No new technologies or major upgrades anticipated"]
+
+**5. Acceptance Criteria (High-Level / Key Outcomes):**
+   - What are the key indicators or success metrics that would define this item as "done" and successful if implemented? (These are high-level; detailed criteria will be in the implementation plan).
+
+**6. Notes / Attachments / Links:**
+   - Any additional context, relevant discussions, links to designs, mockups, error logs, user feedback, related issues, etc.
+
+**7. Implementation Plan Link (To be filled if item is moved to implementation):**
+   - Link: [e.g., `.goodvibes/rules/implementation-plan-[feature-name].mdc`]
+---
+
+*(Copy and fill the template above for each new backlog item)*
+
+## Example Backlog Item:
+
+---
+**Item ID:** BKLOG-20231027-001
+**Title:** Add Dark Mode to User Dashboard
+
+**Date Added:** 2023-10-27
+**Reported By:** UI/UX Team
+**Status:** Open
+**Priority:** Medium
+**Estimated Effort:** M
+**Tags/Category:** Feature, UI/UX
+
+**1. Problem Description / User Story / Business Need:**
+   - Users have requested a dark mode option for the dashboard to reduce eye strain, especially in low-light conditions, and to align with modern application aesthetics.
+   - Primary users: All dashboard users.
+   - Current: Dashboard only offers a light theme. Desired: Users can toggle between light and dark themes.
+
+**2. Proposed Solution / Scope (Optional - High Level):**
+   - Implement a theme-switching mechanism.
+   - Create a dark theme color palette.
+   - Update all dashboard components to support light and dark themes.
+   - IN SCOPE: Dashboard pages and core components.
+   - OUT OF SCOPE: Theming for public marketing site, email templates.
+
+**3. Justification / Value / Impact:**
+   - Improves user experience and accessibility.
+   - Meets common user expectation for modern web applications.
+   - May increase user engagement and satisfaction.
+   - Impact if not addressed: Users with preference for dark mode may have a suboptimal experience.
+
+**4. Technical Considerations & Potential Impact on Core Documents:**
+   - Will require CSS variables for theming. May involve a context provider for theme state.
+   - **Potential impact on `architecture.mdc`:** "No significant impact expected on overall architecture. Frontend state management for theme preference needs consideration."
+   - **Potential impact on `design.mdc`:** "Requires defining a dark mode color palette and ensuring all UI components are adapted. New UI element for theme toggling."
+   - **Potential impact on `tech-stack.mdc`:** "No new libraries anticipated. Existing CSS preprocessor/styling solution to be used."
+
+**5. Acceptance Criteria (High-Level / Key Outcomes):**
+   - Users can switch between light and dark themes on the dashboard.
+   - All dashboard content is legible and aesthetically pleasing in dark mode.
+   - Theme preference is persisted (e.g., in local storage or user profile).
+
+**6. Notes / Attachments / Links:**
+   - Link to Figma designs for dark mode: [link-to-figma]
+   - User feedback thread: [link-to-feedback]
+
+**7. Implementation Plan Link (To be filled if item is moved to implementation):**
+   - Link: 
+---
+-->
+
+
+---
+**Item ID:** BKLOG-20250601-001
+**Title:** Fix Logout Button Visibility Issue in Navbar
+
+**Date Added:** 2025-06-01
+**Reported By:** Manual Testing Phase - Production Deployment
+**Status:** Open
+**Priority:** High
+**Estimated Effort:** S
+**Tags/Category:** Bug, UI/UX, Critical
+
+**1. Problem Description / User Story / Business Need:**
+   - The logout button in the top-right header appears with white text on white background making it invisible to users.
+   - This issue occurs consistently in Chrome browser and affects user ability to properly sign out.
+   - As a user, I want to clearly see the logout button so that I can easily sign out of my account.
+   - Current situation: Users can still logout by clicking the invisible button area, but this creates poor UX and confusion.
+
+**2. Proposed Solution / Scope (Optional - High Level):**
+   - Fix the CSS styling for the logout button to ensure proper contrast.
+   - The issue likely stems from the Button component with variant='outline' having incorrect text color.
+   - IN SCOPE: Fixing logout button visibility in navbar, ensuring proper color contrast.
+   - OUT OF SCOPE: Complete navbar redesign, other navigation elements.
+
+**3. Justification / Value / Impact:**
+   - Critical for user experience and proper authentication flow.
+   - Security concern as users may not be able to properly logout.
+   - Basic functionality that should work reliably in production.
+   - Impact if not addressed: Users frustrated with inability to see logout option, potential security issues.
+
+**4. Technical Considerations & Potential Impact on Core Documents:**
+   - Issue is in Navbar.tsx component with Button styling.
+   - Likely CSS class conflict between outline variant and text color.
+   - **Potential impact on `architecture.mdc`:** "No significant architectural changes needed."
+   - **Potential impact on `design.mdc`:** "May need to update button color specifications to ensure consistent contrast across all button variants."
+   - **Potential impact on `tech-stack.mdc`:** "No new technologies needed. Fix involves CSS/Tailwind class adjustments."
+
+**5. Acceptance Criteria (High-Level / Key Outcomes):**
+   - Logout button is clearly visible with proper text color contrast in header.
+   - Button maintains consistent styling with rest of navbar elements.
+   - Fix works across different browsers (Chrome, Safari, Firefox).
+
+**6. Notes / Attachments / Links:**
+   - Screenshot shows white button with white text in top-right header.
+   - Occurring in Chrome browser during manual testing.
+   - Always been present since implementation.
+
+**7. Implementation Plan Link (To be filled if item is moved to implementation):**
+   - Link:
+---
+
+---
+**Item ID:** BKLOG-20250601-002
+**Title:** Fix Group Navigation Error - Invalid Revalidate Function Issue
+
+**Date Added:** 2025-06-01
+**Reported By:** Manual Testing Phase - Production Deployment
+**Status:** Implemented
+**Priority:** Critical
+**Estimated Effort:** M
+**Tags/Category:** Bug, Navigation, Next.js, Critical
+
+**1. Problem Description / User Story / Business Need:**
+   - Clicking on any group card throws a revalidate error and completely breaks navigation to group detail pages.
+   - Error: Invalid revalidate value "function() { throw new Error("Attempted to call revalidate() from the server but revalidate is on the client...
+   - As a user, I want to click on group cards to view group details so that I can manage my group expenses.
+   - Current situation: Navigation is completely broken, users cannot access group detail pages.
+
+**2. Proposed Solution / Scope (Optional - High Level):**
+   - Fix the client/server boundary issue with Next.js revalidate function in groups/[groupId]/page.tsx.
+   - The issue is with `export const revalidate = 60` being used in a client component.
+   - IN SCOPE: Fixing group navigation, removing or properly implementing revalidate.
+   - OUT OF SCOPE: Complete refactor of group detail page structure.
+
+**3. Justification / Value / Impact:**
+   - Critical blocker preventing users from accessing core functionality.
+   - Makes group management completely unusable.
+   - Breaks the primary user flow of viewing and managing groups.
+   - Impact if not addressed: Application is essentially broken for group functionality.
+
+**4. Technical Considerations & Potential Impact on Core Documents:**
+   - Next.js client/server component boundary issue.
+   - Need to either remove revalidate export or move to server component pattern.
+   - **Potential impact on `architecture.mdc`:** "May need to clarify client vs server component patterns for data fetching."
+   - **Potential impact on `design.mdc`:** "No impact on design system."
+   - **Potential impact on `tech-stack.mdc`:** "May need to document Next.js 13+ App Router patterns more clearly."
+
+**5. Acceptance Criteria (High-Level / Key Outcomes):**
+   - Users can successfully navigate to group detail pages by clicking group cards.
+   - No revalidate errors in console or blocking navigation.
+   - Group detail page loads properly with all expected functionality.
+
+**6. Notes / Attachments / Links:**
+   - Error occurs in Chrome browser when clicking any group card.
+   - Happens consistently for all groups.
+   - Related to Next.js App Router client/server component patterns.
+
+**7. Implementation Plan Link (To be filled if item is moved to implementation):**
+   - Link: `.goodvibes/rules/implementation-plan-fix-group-navigation.mdc` (Completed January 2025)
+---
+
+---
+**Item ID:** BKLOG-20250601-003
+**Title:** Improve Group Creation User Experience
+
+**Date Added:** 2025-06-01
+**Reported By:** Manual Testing Phase - Production Deployment
+**Status:** Open
+**Priority:** Medium
+**Estimated Effort:** M
+**Tags/Category:** Feature, UI/UX, Enhancement
+
+**1. Problem Description / User Story / Business Need:**
+   - Group creation flow at /groups/create has several UX issues affecting user satisfaction.
+   - Issues include: No pressed state for "Create Group" button, no success indication after creation, no automatic navigation to created group.
+   - As a user, I want clear feedback when creating a group and to be taken to my new group so that I can immediately start using it.
+   - Current situation: Users create groups but get no feedback and must manually navigate to find their new group.
+
+**2. Proposed Solution / Scope (Optional - High Level):**
+   - Add pressed/loading state to "Create Group" button during submission.
+   - Show success notification/toast when group is created successfully.
+   - Automatically redirect user to the newly created group detail page.
+   - IN SCOPE: Button states, success feedback, navigation flow improvement.
+   - OUT OF SCOPE: Complete group creation form redesign, advanced group setup wizard.
+
+**3. Justification / Value / Impact:**
+   - Improves user satisfaction and perceived application quality.
+   - Reduces user confusion about whether action completed successfully.
+   - Streamlines workflow by taking users directly to their new group.
+   - Impact if not addressed: Users may be confused about group creation success, poor onboarding experience.
+
+**4. Technical Considerations & Potential Impact on Core Documents:**
+   - Modify GroupCreateForm.tsx to add button states and navigation.
+   - May need to add toast notification system if not already present.
+   - Router navigation to /groups/[groupId] after successful creation.
+   - **Potential impact on `architecture.mdc`:** "May need to add notification/toast system to application architecture."
+   - **Potential impact on `design.mdc`:** "Need to define success states, button loading states, and notification styling."
+   - **Potential impact on `tech-stack.mdc`:** "May need to add a toast/notification library if not already included."
+
+**5. Acceptance Criteria (High-Level / Key Outcomes):**
+   - "Create Group" button shows loading state while creating group.
+   - Success notification appears when group is created successfully.
+   - User is automatically redirected to the new group detail page.
+   - Error states are properly handled and displayed to user.
+
+**6. Notes / Attachments / Links:**
+   - Testing at http://localhost:3000/groups/create
+   - Groups are successfully created but UX is poor.
+   - Users currently find new groups on homepage but this is suboptimal.
+
+**7. Implementation Plan Link (To be filled if item is moved to implementation):**
+   - Link:
+---
+
+---
+**Item ID:** BKLOG-20250101-004
+**Title:** Fix Database Schema - Missing created_at Column in group_members Table
+
+**Date Added:** 2025-01-01
+**Reported By:** Manual Testing Phase - Post Navigation Fix Validation
+**Status:** Implemented
+**Priority:** High
+**Estimated Effort:** S
+**Tags/Category:** Bug, Database, Critical
+
+**1. Problem Description / User Story / Business Need:**
+   - Group detail pages fail to load with error: "Failed to load group: column group_members.created_at does not exist"
+   - This error occurs on individual group detail pages (e.g., /groups/[groupId]) when attempting to view both existing groups and newly created groups.
+   - As a user, I want to view group details and member information so that I can manage group expenses, but currently I get a database error instead.
+   - Current situation: Group detail pages are completely broken due to missing database column, preventing access to core group management functionality.
+
+**2. Proposed Solution / Scope (Optional - High Level):**
+   - Add the missing `created_at` column to the `group_members` table in Supabase database.
+   - Ensure the column is properly typed (timestamp with time zone) and has appropriate default values.
+   - Run database migration to add the column to existing table structure.
+   - IN SCOPE: Database schema fix for group_members table, migration script.
+   - OUT OF SCOPE: Complete database restructure, changes to other tables.
+
+**3. Justification / Value / Impact:**
+   - Critical blocker preventing users from accessing group detail functionality.
+   - Breaks core group management workflows after successful navigation fix (BKLOG-20250601-002).
+   - Makes the application unusable for viewing group member information and managing expenses.
+   - Impact if not addressed: Users cannot access any group detail pages, rendering group functionality completely broken.
+
+**4. Technical Considerations & Potential Impact on Core Documents:**
+   - Database migration required in Supabase to add missing column to group_members table.
+   - Need to ensure migration is compatible with existing data and application queries.
+   - **Potential impact on `architecture.mdc`:** "Update GroupMembers table schema documentation to reflect correct column structure including created_at timestamp."
+   - **Potential impact on `design.mdc`:** "No impact on UI design - this is a backend database schema fix."
+   - **Potential impact on `tech-stack.mdc`:** "No new technologies needed. Standard Supabase database migration using existing migration tools."
+
+**5. Acceptance Criteria (High-Level / Key Outcomes):**
+   - Group detail pages load successfully without database column errors.
+   - All group member queries work correctly with proper created_at column access.
+   - Both existing groups and newly created groups display member information properly.
+   - No regression in group creation or member management functionality.
+
+**6. Notes / Attachments / Links:**
+   - Error discovered during testing at http://localhost:3001/groups/2cda3631-3afa-443a-8035-95ac3b60a24c
+   - Affects both existing groups and newly created groups consistently.
+   - Issue discovered immediately after successful resolution of group navigation fix (BKLOG-20250601-002).
+   - Server logs show: "column group_members.created_at does not exist" when querying group member data.
+
+**7. Implementation Plan Link (To be filled if item is moved to implementation):**
+   - Link: `.goodvibes/rules/implementation-plan-fix-database-schema-created-at.mdc`
+---
+
+---
+**Item ID:** BKLOG-20250601-005
+**Title:** Fix AI Expense Parsing HTTP 500 Error with Complex Input Text
+
+**Date Added:** 2025-06-01
+**Reported By:** Manual Testing Phase - Group Detail Page Testing
+**Status:** Open
+**Priority:** High
+**Estimated Effort:** M
+**Tags/Category:** Bug, AI/ML, API, Critical
+
+**1. Problem Description / User Story / Business Need:**
+   - AI-powered expense parsing fails with HTTP 500 error when processing complex, multi-line expense descriptions with detailed information.
+   - Error occurs in NLLExpenseInput component at line 121 during parseExpenseMutation, causing "AI Parsing Failed" state.
+   - As a user, I want to submit detailed expense descriptions with multiple items and complex scenarios so that the AI can help me create accurate expense records.
+   - Current situation: Simple expense text works fine, but complex text (like multi-day ski trip expenses with multiple items and participants) consistently fails with server error.
+
+**2. Proposed Solution / Scope (Optional - High Level):**
+   - Improve error handling in parse-expense Supabase Edge Function to handle complex input gracefully.
+   - Add input validation and sanitization to prevent server crashes from complex text.
+   - Enhance OpenAI prompt engineering to better handle complex multi-item expense scenarios.
+   - Add better fallback mechanisms when AI parsing encounters edge cases.
+   - IN SCOPE: Server error handling, input validation, OpenAI prompt improvements, better error messages.
+   - OUT OF SCOPE: Complete rewrite of AI parsing system, major UI changes to input form.
+
+**3. Justification / Value / Impact:**
+   - Critical for AI-powered expense parsing feature adoption and user satisfaction.
+   - Complex expense scenarios are common use cases (group trips, multi-day events, detailed receipts).
+   - HTTP 500 errors provide poor user experience and no actionable feedback.
+   - Feature becomes unreliable for real-world expense scenarios if only simple inputs work.
+   - Impact if not addressed: Users will avoid AI parsing for anything but trivial expenses, reducing feature value.
+
+**4. Technical Considerations & Potential Impact on Core Documents:**
+   - Issue is in supabase/functions/parse-expense/index.ts - needs better error handling and input processing.
+   - May need to improve OpenAI prompt engineering in systemPrompt for complex scenarios.
+   - Potential timeout issues with complex text processing requiring longer response times.
+   - Input length limits (currently 1000 characters) may need evaluation for complex scenarios.
+   - **Potential impact on `architecture.mdc`:** "May need to document AI parsing limitations and error handling patterns for complex input scenarios."
+   - **Potential impact on `design.mdc`:** "Could require UX improvements for handling parsing failures and providing better user guidance on input formatting."
+   - **Potential impact on `tech-stack.mdc`:** "May need to document OpenAI usage patterns, timeout handling, and error recovery mechanisms for complex AI operations."
+
+**5. Acceptance Criteria (High-Level / Key Outcomes):**
+   - Complex expense descriptions with multiple items and participants parse successfully or fail gracefully with clear error messages.
+   - HTTP 500 errors eliminated in favor of proper error handling and user feedback.
+   - OpenAI timeout and response validation improved to handle edge cases.
+   - Users receive actionable feedback when AI parsing encounters issues (clarifying questions, formatting guidance).
+   - Parsing success rate improves for real-world complex expense scenarios.
+
+**6. Notes / Attachments / Links:**
+   - Console error shows: "Error: HTTP 500:" at src/components/Expenses/NLLExpenseInput.tsx (121:15)
+   - Complex test input included multi-day ski trip with lodge, passes, rental, lessons, groceries, and outing details.
+   - Simple inputs like "dinner for 3 people $45" work correctly.
+   - Parse-expense endpoint at supabase/functions/parse-expense/index.ts is throwing unhandled exceptions.
+   - UI correctly shows "AI Parsing Failed" fallback but users get no specific guidance on what went wrong.
+
+**7. Implementation Plan Link (To be filled if item is moved to implementation):**
+   - Link:
+---
+
+---
+**Item ID:** BKLOG-20250601-006
+**Title:** Fix Non-Functional Settings Button on Group Detail Page
+
+**Date Added:** 2025-06-01
+**Reported By:** Manual Testing Phase - Group Detail Page UI Testing
+**Status:** Open
+**Priority:** Medium
+**Estimated Effort:** S
+**Tags/Category:** Bug, UI/UX, Group Management
+
+**1. Problem Description / User Story / Business Need:**
+   - The settings button (gear icon) on the group detail page is non-functional when tapped/clicked.
+   - Users expect to access group settings, member management, or configuration options through this button.
+   - As a group admin, I want to click the settings button to access group configuration options so that I can manage group properties, permissions, or other administrative functions.
+   - Current situation: Settings button is visible but has no click handler or associated functionality.
+
+**2. Technical Context & Considerations:**
+   - Issue located in GroupDetailView.tsx component - settings button lacks onClick handler or navigation.
+   - Need to determine what settings functionality should be available (group name/description editing, member permissions, group deletion, etc.).
+   - May need to create new GroupSettingsView component or modal for settings interface.
+   - Consider whether settings should be a separate page route or a modal/drawer overlay.
+
+**3. Success Criteria (High-Level):**
+   - Settings button responds to clicks with appropriate visual feedback.
+   - Settings interface provides relevant group management options.
+   - Settings functionality works consistently across different devices and browsers.
+   - Group admins can access and modify appropriate group configurations.
+
+**4. Notes:**
+   - Settings button currently visible in top-right of group detail page header.
+   - Need to define scope of settings functionality - could include group info editing, member management, notification preferences, etc.
+   - Should consider user permissions - only group admins may need access to certain settings.
+
+**5. Implementation Plan Link (To be filled when work begins):**
+   - Link:
+---
+
+---
+**Item ID:** BKLOG-20250601-007
+**Title:** Add Expense List View and Split Details Display to Group Page
+
+**Date Added:** 2025-06-01
+**Reported By:** Manual Testing Phase - Group Detail Page Functionality Review
+**Status:** Open
+**Priority:** Critical
+**Estimated Effort:** L
+**Tags/Category:** Feature, UI/UX, Expense Management, Critical
+
+**1. Problem Description / User Story / Business Need:**
+   - Group detail page lacks any display of existing expenses or their split details, making it impossible to see what expenses have been added.
+   - Users cannot view how expenses are being split among group members or track spending history.
+   - As a group member, I want to see a list of all group expenses and their split details so that I can understand who paid what and who owes what for each expense.
+   - Current situation: Only expense input form is visible, but no expense history or details are shown.
+
+**2. Technical Context & Considerations:**
+   - Need to integrate ExpenseList.tsx component into GroupDetailView.tsx.
+   - Should display expenses with ExpenseListItem.tsx showing detailed split information.
+   - Consider pagination or infinite scroll for groups with many expenses.
+   - Need to fetch expense data for the specific group using existing getGroupExpenses() function.
+   - Should show expense statistics and summary information (total spent, pending expenses, etc.).
+   - May need to add tabs or sections to organize expense input vs expense viewing.
+
+**3. Success Criteria (High-Level):**
+   - Group detail page displays comprehensive list of all group expenses.
+   - Each expense shows detailed split information (who paid, who owes, amounts, percentages).
+   - Expense list includes search, filtering, and sorting capabilities.
+   - Users can expand expense items to see full details including AI assumptions and itemized breakdowns.
+   - Page performs well with large numbers of expenses.
+
+**4. Notes:**
+   - ExpenseList.tsx and ExpenseListItem.tsx components already exist but are not integrated into group detail view.
+   - Should consider the page layout - expense input form + expense list could make page quite long.
+   - May want to add quick summary statistics at the top (total expenses, total amount, settlement status).
+
+**5. Implementation Plan Link (To be filled when work begins):**
+   - Link:
+---
+
+---
+**Item ID:** BKLOG-20250601-008
+**Title:** Implement Manual Expense Entry Functionality
+
+**Date Added:** 2025-06-01
+**Reported By:** Manual Testing Phase - Expense Management Workflow Testing
+**Status:** Open
+**Priority:** Critical
+**Estimated Effort:** L
+**Tags/Category:** Feature, UI/UX, Expense Management, Critical
+
+**1. Problem Description / User Story / Business Need:**
+   - No way to manually add expenses except when AI parsing fails, and even then the manual entry button is non-functional.
+   - Users need ability to add expenses manually for cases where AI parsing isn't suitable or when they prefer manual control.
+   - As a user, I want to manually enter expense details (description, amount, who paid, how to split) so that I can add expenses when AI parsing fails or when I prefer precise control over expense entry.
+   - Current situation: Manual expense entry is only available as a fallback after AI parsing failure, but the functionality doesn't work.
+
+**2. Technical Context & Considerations:**
+   - ManualExpenseForm.tsx component exists but may not be properly integrated or functional.
+   - Need to add manual expense entry option to the main group page alongside AI expense entry.
+   - Should support all expense features: multiple payers, complex splits, itemized expenses, placeholder members.
+   - May need to switch between AI and manual input modes or provide both options simultaneously.
+   - Integration with existing expense saving mutation and database insertion logic.
+   - Form validation and error handling for manual input scenarios.
+
+**3. Success Criteria (High-Level):**
+   - Users can access manual expense entry option from group detail page.
+   - Manual expense form supports all necessary fields: description, amount, date, payers, participants, split methods.
+   - Form handles complex scenarios: multiple payers, percentage splits, itemized expenses.
+   - Manual expenses save correctly to database and appear in expense list immediately.
+   - Form provides clear validation feedback and error handling.
+
+**4. Notes:**
+   - ManualExpenseForm.tsx exists in codebase but appears not integrated into main user flow.
+   - Should consider UX for choosing between AI and manual expense entry methods.
+   - May need to update expense saving logic to handle manually entered expenses.
+   - Should support same features as AI-parsed expenses (placeholders, itemization, etc.).
+
+**5. Implementation Plan Link (To be filled when work begins):**
+   - Link:
+---
+
+---
+**Item ID:** BKLOG-20250601-009
+**Title:** Implement Member Management Functionality (Edit, Delete, Link to Email)
+
+**Date Added:** 2025-06-01
+**Reported By:** Manual Testing Phase - Group Member Management Testing
+**Status:** Open
+**Priority:** High
+**Estimated Effort:** M
+**Tags/Category:** Feature, UI/UX, Member Management
+
+**1. Problem Description / User Story / Business Need:**
+   - After adding placeholder members, there's no way to edit member details, delete members, or link placeholder members to real email addresses.
+   - Users need comprehensive member management capabilities for maintaining accurate group membership.
+   - As a group admin, I want to edit member names, delete members who are no longer part of the group, and link placeholder members to real users via email so that I can keep group membership accurate and enable real users to join.
+   - Current situation: Can add placeholder members but no subsequent management options are available.
+
+**2. Technical Context & Considerations:**
+   - Need to add member management UI to group detail page - possibly in settings or as inline actions.
+   - Should support editing placeholder member names and email associations.
+   - Member deletion should handle existing expenses (reassign, archive, or prevent deletion).
+   - Email linking could trigger invitation system for real users to join the group.
+   - Consider permissions - who can edit/delete members (admins only vs all members).
+   - Database operations need to maintain data integrity with existing expenses.
+
+**3. Success Criteria (High-Level):**
+   - Group members list includes edit and delete actions for each member.
+   - Placeholder members can be edited to update name and add email address.
+   - Member deletion works safely without breaking existing expense records.
+   - Email linking functionality allows placeholder members to be converted to real users.
+   - Member management actions are properly restricted based on user permissions.
+
+**4. Notes:**
+   - Should consider what happens to expenses when a member is deleted - may need to archive rather than delete.
+   - Email linking could integrate with Supabase auth to send invitations.
+   - May need confirmation dialogs for destructive actions like member deletion.
+   - Consider bulk operations for managing multiple members efficiently.
+
+**5. Implementation Plan Link (To be filled when work begins):**
+   - Link:
+---
+
+---
+**Item ID:** BKLOG-20240716-001
+**Title:** Enable Itemization of Expenses
+
+**Date Added:** 2024-07-16
+**Reported By:** User
+**Status:** Open
+**Priority:** TBD
+**Estimated Effort:** TBD
+**Tags/Category:** Feature, Expense Management, UI/UX, NLP
+
+**1. Problem Description / User Story / Business Need:**
+   - Users need to split individual items within a single receipt or transaction among different people or with different split rules.
+   - For example, a grocery bill might include items for the whole group and specific items for an individual. "Karen spent $500 on groceries, but that included $100 of stuff for Mike" should allow "$400 General groceries" to be split by all and "$100 of Mike's stuff" to be paid only by Mike (or offset his share).
+   - Currently, an entire expense amount is split according to one rule, which isn't flexible enough for these common scenarios.
+
+**2. Proposed Solution / Scope (Optional - High Level):**
+   - Introduce the concept of "sub-items" or "line items" within a single expense.
+   - Users should be able to add multiple itemizations to an expense, each with its own description, amount, and split configuration (participants and split logic).
+   - The sum of itemized amounts must equal the total expense amount.
+   - This would affect both manual expense entry and NLP-driven expense entry.
+   - IN SCOPE: UI for adding/editing/deleting itemizations within an expense; backend changes to store and process itemized expenses; NLP model enhancements to detect and structure itemized entries.
+   - OUT OF SCOPE: Automatic item detection from receipt images (in this initial phase); complex inventory-style item management.
+
+**3. Justification / Value / Impact:**
+   - Significantly increases the accuracy and fairness of expense splitting.
+   - Addresses a common real-world scenario in group expenses, making the tool more practical.
+   - Improves user trust and satisfaction by allowing precise control over how shared costs are divided.
+   - Impact if not addressed: Users may need to create multiple separate expenses to represent a single receipt, or manually calculate complex shares outside the app, reducing its utility.
+
+**4. Technical Considerations & Potential Impact on Core Documents:**
+   - **UI/UX:** Requires new UI elements in the `ManualExpenseForm.tsx` for adding, viewing, and managing itemizations. This could be a list of sub-forms or a dynamic table. Disambiguation flows will be needed if NLP suggests itemizations.
+   - **Data Model:**
+     - The `expenses` table might need a flag like `is_itemized`.
+     - A new table, `expense_itemizations`, would be needed: `id`, `expense_id`, `description`, `amount`.
+     - The `expense_splits` table would then need to be associated with an `expense_itemization_id` instead of directly with `expense_id` if an expense is itemized. Alternatively, splits could remain linked to `expense_id` but have an optional `itemization_id` if the split is for a specific item. This needs careful consideration for query complexity vs. data integrity.
+   - **Backend Logic:** Supabase functions for creating/updating expenses will need to handle itemized data structures. Balance calculation logic will need to correctly aggregate itemized splits.
+   - **NLP/LLM:** The LLM flow for expense creation will need to be enhanced. The model must be prompted to identify potential itemizations from natural language. The expected structured output from the LLM will need to include itemization details (item description, item amount, and potentially per-item split preferences).
+   - **Potential impact on `architecture.mdc`:** "Data model for expenses will need significant extension to support itemizations and their individual splits. Backend functions will require updates for processing these structures."
+   - **Potential impact on `design.mdc`:** "New UI components and user flows for managing itemized expenses within the manual expense form. Design for how NLP-suggested itemizations are presented and confirmed by the user."
+   - **Potential impact on `tech-stack.mdc`:** "No new libraries anticipated, but prompt engineering and LLM interaction logic for NLP will become more complex."
+
+**5. Acceptance Criteria (High-Level / Key Outcomes):**
+   - Users can manually add multiple itemizations to a single expense, each with its own amount and description.
+   - Each itemization can be split among different participants and/or using different split logic (e.g., item 1 split equally, item 2 assigned to one person).
+   - The NLP expense entry can detect and suggest itemizations from user input (e.g., "Groceries $100, including $20 of snacks for me only").
+   - Group balances correctly reflect expenses that have been itemized and split accordingly.
+   - The sum of itemizations must validate against the total expense amount.
+
+**6. Notes / Attachments / Links:**
+   - This feature is a common request for users who share large, multi-part expenses like groceries, travel costs with optional add-ons, etc.
+   - Example User Input: "Weekend trip: Hotel $300 split 3 ways, car rental $120 paid by John but split 3 ways, and park tickets $50 each for me and Sarah only."
+
+**7. Implementation Plan Link (To be filled if item is moved to implementation):**
+   - Link: [TBD]
+---

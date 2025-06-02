@@ -96,7 +96,9 @@ This document outlines the coding standards, practices, and workflow for the AI 
 *   **Task List (`tasks-ai-splits-prd.md`):** Updated to track progress.
 *   **Code Comments:** As described above.
 *   **README.md:** Keep the main project `README.md` updated with setup instructions, tech stack overview, and deployment notes.
-*   **`.goodvibes/rules/*.mdc`:** These documents (architecture, design, tech-stack, good-vibes) should be kept up-to-date as the project evolves.
+*   **`.goodvibes/rules/*.mdc`:** These documents (architecture, design, tech-stack, good-vibes) should be kept up-to-date as the project evolves. This now includes:
+    *   **`backlog.mdc`**: A living document capturing potential features, bugs, technical debt, and ideas that are not yet in active development. Items from the backlog can be selected to become formal implementation plans. It is updated when new items are added (e.g., via `prompt-1.5-generate-backlog.md`) and when an item's status changes (e.g., moved to "Planned", "Implemented", or "Closed" – often as part of an implementation plan's execution via `prompt-2-implement-plan.md`).
+    *   **`implementation-plan-[feature-name].mdc`**: Detailed step-by-step plans for implementing features or resolving items, often originating from an entry in `backlog.mdc`. These plans should include steps for updating core documents and, if applicable, the originating backlog item's status in `backlog.mdc` upon completion.
 
 ## 8. Code Reviews
 

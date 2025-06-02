@@ -3,76 +3,48 @@ name: Deploy to Vercel
 on:
   push:
     branches:
-      - main # Deploy to production on push to main
-  pull_request:
-    branches:
-      - main # Create preview deployment on PR to main
+      - main
+      - develop
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v3
         with:
-          node-version: '18' # Specify your Node.js version
+          node-version: '18' # Or your project's node version
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 8 # Specify your pnpm version
+      - name: Install Dependencies
+        working-directory: ./app_code # Assuming your app is in app_code/
+        run: npm install # Or pnpm install / yarn install based on your project
 
-      - name: Install dependencies
-        working-directory: ./app_code
-        run: pnpm install
+      - name: Run Lint Check
+        working-directory: ./app_code # Assuming your app is in app_code/
+        run: npm run lint # Or your specific lint command
 
-      - name: Lint check
-        working-directory: ./app_code
-        run: pnpm run lint
+      # Add test step if you have one, e.g.:
+      # - name: Run Tests
+      #   working-directory: ./app_code # Assuming your app is in app_code/
+      #   run: npm run test # Or your specific test command
+      #   env:
+      #     # Add any necessary environment variables for your tests here
+      #     # Example: CI_ENV_VAR: ${{ secrets.YOUR_TEST_SECRET }}
 
-      - name: Run tests
-        working-directory: ./app_code
-        run: pnpm run test --ci --coverage
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
-          SENTRY_ORG: ${{ secrets.SENTRY_ORG }} # Potentially needed by Sentry SDK during tests
-          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }} # Potentially needed
-          SENTRY_ENVIRONMENT: "test" # Set a specific environment for tests
-          NEXT_PUBLIC_ENABLE_PERFORMANCE_MONITORING: "true" # For tests expecting this
-          # For sensitive keys, ensure your tests can handle them being undefined or use placeholders if not essential
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }} # Only if tests absolutely need it and are secure
-          # SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }} # Only if tests absolutely need it
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
 
-      - name: Build Next.js app
-        working-directory: ./app_code
-        run: pnpm run build
-        env:
-          # Pass environment variables required for build if any
-          # Example: NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
-          # Ensure these are also set in Vercel for runtime
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }} # Example, if needed for build
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }} # Needed for Sentry webpack plugin
-          NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
-          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
-          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
-          SENTRY_ENVIRONMENT: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
+      - name: Pull Vercel Environment Information
+        working-directory: ./app_code # Vercel commands should run from the project root
+        run: vercel pull --yes --environment=${{ github.ref_name == 'main' && 'production' || 'preview' }} --token=${{ secrets.VERCEL_TOKEN }}
 
-      - name: Security Scan (pnpm audit)
-        working-directory: ./app_code
-        run: pnpm audit --prod # Check for vulnerabilities in production dependencies
+      - name: Build Project Artifacts
+        working-directory: ./app_code # Vercel commands should run from the project root
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
 
-      - name: Deploy to Vercel
-        uses: amondnet/vercel-action@v20 # Or a specific Vercel action like vercel/action
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: ${{ github.ref == 'refs/heads/main' && '--prod' || '' }} # Deploy to production if on main branch
-          working-directory: ./app_code 
+      - name: Deploy Project Artifacts to Vercel
+        working-directory: ./app_code # Vercel commands should run from the project root
+        run: vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }} 

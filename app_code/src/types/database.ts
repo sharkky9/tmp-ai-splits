@@ -32,8 +32,9 @@ export interface GroupMember {
   email: string | null // Email for placeholder/invited members not yet registered
   is_placeholder: boolean // True if this member is a placeholder
   role: string | null // e.g., 'admin', 'member' (can be extended)
-  created_at: string // ISO 8601 timestamp
-  updated_at: string // ISO 8601 timestamp
+  joined_at: string // ISO 8601 timestamp - domain-specific timestamp for when user joined
+  created_at: string // ISO 8601 timestamp - standard audit column for record creation
+  updated_at: string // ISO 8601 timestamp - standard audit column for record modification
 }
 
 // --- Enums and other specific types can be added below ---

@@ -53,6 +53,8 @@ Once you have sufficient understanding, generate the following documents:
 - `tech-stack.mdc`: Technologies, frameworks, and tools to be used
 - `good-vibes.mdc`: Coding standards and practices for the project
 
+Also, be aware that the `.goodvibes/rules/` directory will later include `backlog.mdc`, a document for tracking features, bugs, and ideas before they become formal implementation plans. You do not need to generate `backlog.mdc` now, but understand its role in the overall process.
+
 Refer to the `good-vibes.mdc` to understand the workflow and follow the structure and guidelines for each file in the `rules/` directory.
 
 Output each document clearly separated with code formatting. If information is limited, create structurally complete drafts with placeholders and clearly stated assumptions.

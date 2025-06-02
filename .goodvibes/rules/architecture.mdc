@@ -50,6 +50,28 @@ The application is a web-based platform built on a Next.js frontend and a Supaba
     *   `lib`: Utility functions (currency with decimal.js, date with date-fns, Supabase client)
     *   `lib/analytics`: User action tracking for success metrics
 
+### Next.js App Router Patterns
+
+*   **Client Components** (`'use client'`):
+    *   Used for interactive components requiring state, event handlers, or React hooks
+    *   Data fetching handled via React Query for optimal caching and background revalidation
+    *   **Important**: Cannot use `export const revalidate` - this is only for server components
+    *   Examples: GroupDetailView, ExpenseInput forms, Auth components
+*   **Server Components** (default):
+    *   Used for static or minimal-interactivity pages
+    *   Can use `export const revalidate` for server-side data revalidation
+    *   Reserved for non-interactive page layouts and static content
+*   **Data Fetching Strategy**:
+    *   Client components: React Query with `useQuery` for automatic caching and background refetching
+    *   Server components: Direct database queries with optional revalidation intervals
+    *   **Best Practice**: Prefer React Query for group/expense data due to real-time update requirements
+*   **Performance Characteristics**:
+    *   React Query caching: 5-minute stale time, 10-minute cache time for optimal UX
+    *   Navigation response times: <200ms target (achieved 34ms cached responses)
+    *   Bundle optimization: Client components avoid unnecessary server revalidation overhead
+*   **Common Fix Pattern**: If encountering "Attempted to call revalidate() from the server but revalidate is on the client" error, remove `export const revalidate` from client components - React Query provides superior data management for interactive components
+*   **Implementation Success Case**: Group detail navigation fix (BKLOG-20250601-002) - removing server revalidate from client component improved performance from server-dependent to 34ms cached responses
+
 ## 3. Backend Architecture
 
 *   **Platform:** Supabase
@@ -96,13 +118,16 @@ The application is a web-based platform built on a Next.js frontend and a Supaba
     *   `updated_at` (timestamp with time zone)
 
 *   **GroupMembers Table:** (Links users to groups, supports placeholder members)
-    *   `group_member_id` (uuid, primary key)
+    *   `id` (uuid, primary key)
     *   `group_id` (uuid, foreign key to `Groups.group_id`)
     *   `user_id` (uuid, foreign key to `Users.id`, nullable for placeholder members)
     *   `placeholder_name` (text, nullable)
     *   `email` (text, nullable, for inviting or associating later)
     *   `is_placeholder` (boolean, default false)
-    *   `joined_at` (timestamp with time zone)
+    *   `role` (text, member roles like 'admin', 'member')
+    *   `joined_at` (timestamp with time zone, domain-specific timestamp for when user joined group)
+    *   `created_at` (timestamp with time zone, standard audit column for record creation)
+    *   `updated_at` (timestamp with time zone, standard audit column for record modification)
 
 *   **Expenses Table:** (Stores structured expense data as per FR3.5)
     *   `expense_id` (uuid, primary key)
@@ -234,28 +259,29 @@ The application is a web-based platform built on a Next.js frontend and a Supaba
 ## 11. Production Deployment Architecture
 
 *   **Frontend Deployment (Vercel):**
-    *   Automatic deployments from main branch
-    *   Preview deployments for pull requests
-    *   Environment variable management for different stages
-    *   Bundle optimization with code splitting (101KB shared, 203KB max route)
+    *   Automatic deployments from main branch via GitHub Actions.
+    *   Preview deployments for `develop` branch and pull requests to `main` (via GitHub Actions).
+    *   Environment variable management for different stages handled by Vercel.
+    *   Bundle optimization with code splitting (101KB shared, 203KB max route) - *Note: This is a placeholder value and should be verified post-deployment.*
 *   **Backend Deployment (Supabase):**
     *   Edge Functions deployment with Deno runtime
     *   Environment-specific configuration (development/production)
     *   Database migrations and RLS policy management
 *   **CI/CD Pipeline (GitHub Actions):**
     *   Workflow defined in `.github/workflows/deploy.yml`.
-    *   Triggers on push to `main` (production deployment) and pull requests to `main` (preview deployment).
+    *   Triggers on push to `main` (for production deployment) and `develop` (for preview/staging deployment).
     *   Pipeline Stages:
-        *   Checkout code
-        *   Setup Node.js and pnpm
-        *   Install dependencies (`app_code` directory)
-        *   Lint check (`pnpm run lint` in `app_code`)
-        *   Run tests (`pnpm run test --ci --coverage` in `app_code`)
-        *   Build Next.js app (`pnpm run build` in `app_code`, includes type checking)
-        *   Security Scan (`pnpm audit --prod` in `app_code`)
-        *   Deploy to Vercel (using `amondnet/vercel-action@v20` or similar)
-    *   Secrets Management: Uses GitHub Actions secrets for Vercel tokens, Supabase keys, Sentry keys, etc.
-    *   Branching Strategy: `main` branch for production, PRs to `main` for previews.
+        *   Checkout code.
+        *   Setup Node.js (version 18).
+        *   Install dependencies (e.g., `npm install` within `./app_code`).
+        *   Run Lint Check (e.g., `npm run lint` within `./app_code`).
+        *   (Placeholder for Test Execution - to be enabled and configured as needed).
+        *   Install Vercel CLI.
+        *   Pull Vercel Environment Information (`vercel pull` for production/preview environments within `./app_code`).
+        *   Build Project Artifacts (`vercel build` within `./app_code`).
+        *   Deploy Project Artifacts to Vercel (`vercel deploy --prebuilt` within `./app_code`).
+    *   Secrets Management: Uses GitHub Actions secrets (e.g., `VERCEL_TOKEN`). Vercel project secrets (like Supabase/OpenAI keys) are managed in the Vercel dashboard.
+    *   Branching Strategy: `main` branch for production, `develop` branch for staging/preview deployments.
 *   **Monitoring & Observability:**
     *   Performance monitoring system for success metrics tracking
     *   Error tracking and alerting

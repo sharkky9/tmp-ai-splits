@@ -5,14 +5,14 @@ alwaysApply: false
 ---
 # Implementation Plan: Production Deployment
 
-**Goal:** Deploy the completed LLM Expense Splitting Application to both local development and Vercel production environments with comprehensive monitoring, security, CI/CD pipeline, and performance optimization for prototype-scale usage (<1000 users).
+**Goal:** Deploy the current version of the LLM Expense Splitting Application to both local development and Vercel production environments. This plan focuses on achieving a stable deployment of the application in its *current state*. Comprehensive bug fixing, product improvements, and extensive performance optimization will be addressed in subsequent implementation plans after this initial deployment and further user testing.
 
 ## Implementation Context
 
 ### User & Functional Perspective
-- **Problem Solved:** Enable live testing and user access to the completed expense splitting application with production-grade reliability and monitoring.
-- **Key Workflows:** Automated deployment from git pushes, environment-specific configuration management, performance monitoring, and error tracking.
-- **Core Capabilities:** Local development environment, staging deployment, production deployment with monitoring, automated CI/CD pipeline, and comprehensive error tracking.
+- **Problem Solved:** Enable live testing and user access to the expense splitting application with production-grade reliability and monitoring for its current feature set.
+- **Key Workflows:** Automated deployment from git pushes, environment-specific configuration management, essential performance monitoring, and error tracking for deployment stability.
+- **Core Capabilities:** Local development environment, staging deployment, production deployment with essential monitoring for the current application version, automated CI/CD pipeline, and foundational error tracking.
 
 ### Technical Implementation
 - **Architecture Fit:** Builds upon the existing completed application with production infrastructure, monitoring, and deployment automation.
@@ -20,8 +20,8 @@ alwaysApply: false
 - **Infrastructure:** Vercel for frontend/API routes, Supabase for database/Edge Functions, Sentry for error monitoring, GitHub Actions for CI/CD.
 
 ### Boundaries & Constraints
-- **Out of Scope:** Feature changes to the application code, major architectural modifications, enterprise-scale infrastructure.
-- **Limitations:** Prototype scale (<1000 users), free/starter tiers for monitoring services, standard security policies.
+- **Out of Scope:** Feature changes to the application code beyond what is already implemented, major architectural modifications beyond what is necessary for deployment, enterprise-scale infrastructure, comprehensive bug fixing of all known issues beyond deployment blockers, and implementation of new product improvements. These will be handled in subsequent plans.
+- **Limitations:** Prototype scale (<1000 users), free/starter tiers for monitoring services, standard security policies. The immediate focus is on a functional deployment of the *current version* rather than exhaustive feature parity with a theoretically complete product.
 - **Unchanged Functionality:** All existing application features and user workflows remain identical.
 
 ## Relevant Files
@@ -44,12 +44,12 @@ alwaysApply: false
 - `design.mdc` - No changes needed for deployment
 
 ## Success Metrics
-- **Deployment Success**: Both local and production environments fully functional
-- **Performance**: Page load times < 2 seconds, API response times < 500ms
-- **Monitoring Coverage**: 100% error capture, performance metrics tracking active
-- **Uptime**: 99.9% availability target for production deployment
-- **Security**: All environment variables secured, RLS policies active
-- **CI/CD**: Automated deployments working with <5 minute deploy time
+- **Deployment Success**: Both local and production environments fully functional with the current application codebase.
+- **Basic Operational Stability**: Deployed application is stable and core workflows (e.g., user registration, group creation, expense logging, settlement calculation) are operational as per their current implementation.
+- **Essential Monitoring Coverage**: Basic error capture and performance metrics tracking active to ensure deployment stability and identify critical post-deployment issues.
+- **Uptime**: Target 99% availability for the initial production deployment.
+- **Security**: All environment variables secured, RLS policies active for core data protection.
+- **CI/CD**: Automated deployments working with <10 minute deploy time for the current codebase.
 
 ## Step 0: Test Scaffolding and Verification
 *   **Goal:** Verify the current application state and create deployment verification tests.
@@ -138,7 +138,7 @@ alwaysApply: false
     *   Edge Function deployment might fail due to dependency issues or environment mismatches
     *   Database performance might degrade if indexes are not properly optimized
 *   **Core Document Updates:** `architecture.mdc` (document production database architecture and Edge Function deployment patterns).
-*   **Progress:** ✅ Completed
+*   **Progress:** ✅ Completed (RLS issue resolved - group creation now working with secure policies)
 
 ## Step 3: Monitoring and Error Tracking Integration
 *   **Goal:** Integrate Sentry error tracking, set up performance monitoring, and configure analytics for production use.
@@ -213,127 +213,75 @@ alwaysApply: false
 *   **Core Document Updates:** `tech-stack.mdc` (document Vercel configuration and optimization settings).
 *   **Progress:** ✅ Completed
 
-## Step 5: CI/CD Pipeline Implementation
-*   **Goal:** Implement automated deployment pipeline with GitHub Actions for continuous integration and deployment.
+## Step 5: CI/CD Pipeline Setup (GitHub Actions)
+*   **Goal:** Automate deployments of the *current application state* to Vercel using GitHub Actions for pushes to main (production) and develop (staging) branches.
 *   **Actions:**
-    1.  **GitHub Actions Workflow:**
-        *   Create `.github/workflows/deploy.yml` with comprehensive CI/CD pipeline
-        *   Configure workflow triggers (push to main, pull requests)
-        *   Set up environment-specific deployment jobs (staging, production)
-        *   Add workflow permissions and security settings
-    2.  **CI/CD Pipeline Stages:**
-        *   **Lint and Type Check:** ESLint, TypeScript compilation, Prettier formatting
-        *   **Test Execution:** Full test suite execution with coverage reporting
-        *   **Build Verification:** Production build test and bundle analysis
-        *   **Security Scanning:** Dependency vulnerability scanning
-        *   **Deployment:** Automated deployment to Vercel with environment promotion
-    3.  **Environment Management:**
-        *   Configure GitHub secrets for API keys and tokens
-        *   Set up branch-based deployment strategy (main → production, develop → staging)
-        *   Configure deployment notifications and status reporting
-        *   Add manual approval gates for production deployments
-    4.  **Deployment Verification:**
-        *   Add post-deployment health checks and smoke tests
-        *   Configure rollback procedures for failed deployments
-        *   Set up deployment monitoring and alerting
-        *   Add deployment status reporting to Slack/Discord (optional)
-    5.  **Test:** Create CI/CD pipeline tests and validate workflow execution
+    1.  **Workflow Creation:** Create `.github/workflows/deploy.yml`
+        *   Define triggers for `main` and `develop` branches.
+        *   Set up jobs for building and deploying the current application to Vercel.
+        *   Use Vercel CLI for deployments.
+    2.  **Secret Configuration:**
+        *   Add `VERCEL_TOKEN` and `VERCEL_PROJECT_ID` to GitHub repository secrets.
+        *   Add Supabase and OpenAI production keys to Vercel environment variables (via dashboard, not in repo).
+    3.  **Environment-Specific Deployment:**
+        *   Configure `deploy.yml` to deploy `main` branch to production Vercel project.
+        *   Configure `deploy.yml` to deploy `develop` branch to a staging/preview Vercel project/alias.
+    4.  **Build and Test:**
+        *   Ensure the CI pipeline runs essential checks (linting, critical tests relevant to deployment) before deployment.
+        *   Verify build process for the current codebase within GitHub Actions.
+    5.  **Test:** Trigger deployment via push to `develop` and `main` branches.
 *   **Validation:**
-    *   GitHub Actions workflow created and functional
-    *   All pipeline stages executing successfully
-    *   Automated deployments working for both staging and production
-    *   Deployment verification and health checks functioning
-    *   CI/CD pipeline tests passing
+    *   `deploy.yml` workflow created and functional for deploying the current application version.
+    *   Secrets correctly configured and accessible by the workflow.
+    *   Deployments to staging and production environments successful via CI/CD.
+    *   CI pipeline includes basic checks before deployment.
 *   **Risks:**
-    *   GitHub Actions workflow might fail due to dependency or environment issues
-    *   Automated deployments could deploy broken code if tests are insufficient
-    *   Secret management in GitHub Actions might expose sensitive credentials
-*   **Core Document Updates:** `architecture.mdc` (document CI/CD pipeline architecture and deployment flow).
-*   **Progress:** ✅ Completed (GitHub Actions workflow file created; successful execution to be validated by user by pushing to GitHub)
+    *   CI/CD pipeline misconfiguration could lead to failed deployments or deploying broken code.
+    *   Incorrect secret handling could expose sensitive information.
+    *   Branching strategy mismatches could lead to incorrect versions being deployed.
+*   **Core Document Updates:** `architecture.mdc` (document CI/CD pipeline).
+*   **Progress:** ✅ Completed (Initial pipeline structure set up, manual secret configuration and first deployment test pending by user)
 
-## Step 6: Production Deployment and Testing
-*   **Goal:** Execute full production deployment, comprehensive testing, and performance validation.
+## Step 6: Final Deployment Verification and Documentation
+*   **Goal:** Perform final checks on the production deployment of the *current application state* and update documentation for accessing the deployed application. Extensive feature testing is deferred.
 *   **Actions:**
-    1.  **Initial Production Deployment:**
-        *   Execute first production deployment via Vercel CLI
-        *   Verify all services are accessible and functional
-        *   Test database connectivity and Edge Function execution
-        *   Validate environment variable configuration and security settings
-    2.  **End-to-End Testing:**
-        *   Execute comprehensive user journey testing in production
-        *   Test all major workflows: user registration, group creation, expense logging, settlement calculation
-        *   Verify LLM integration working with production OpenAI API limits
-        *   Test error handling and fallback mechanisms
-    3.  **Performance Validation:**
-        *   Measure and validate performance metrics against success criteria
-        *   Test page load times, API response times, and database query performance
-        *   Validate Core Web Vitals and Lighthouse scores
-        *   Test application performance under simulated load
-    4.  **Security Verification:**
-        *   Verify all security headers and CORS settings
-        *   Test RLS policies with different user scenarios
-        *   Validate API rate limiting and abuse prevention
-        *   Conduct basic security scanning and vulnerability assessment
-    5.  **Monitoring Validation:**
-        *   Verify error tracking is capturing and reporting correctly
-        *   Test performance monitoring and alerting
-        *   Validate analytics tracking for user interactions
-        *   Confirm monitoring dashboards are functional and accessible
-    6.  **Test:** Update all deployment tests to pass with production environment
+    1.  **Production Smoke Test (Current Features):**
+        *   Manually verify core application workflows *as they currently exist* in the production environment (user signup, login, group creation, expense adding, settlement viewing).
+        *   Check browser console for critical errors related to deployment or core functionality.
+        *   Confirm environment variables are correctly loaded in production.
+    2.  **Monitoring Check:**
+        *   Verify Sentry is capturing any critical errors from the smoke test.
+        *   Check Vercel Analytics for initial traffic and basic performance data.
+    3.  **Documentation Update (Deployment Focus):**
+        *   Update `README.md` with links to the deployed production application.
+        *   Add basic instructions for accessing and using the deployed application's current features.
+        *   Document any known critical issues or major gaps in the *current deployed version* that users might encounter, with a note that these will be addressed in subsequent improvement cycles.
+    4.  **Handover/Announcement:**
+        *   Announce availability of the deployed application to relevant stakeholders, clarifying its current state and the plan for future improvements.
 *   **Validation:**
-    *   Production deployment successful and fully functional
-    *   All end-to-end user workflows working correctly
-    *   Performance metrics meeting or exceeding success criteria
-    *   Security measures active and protecting application appropriately
-    *   Monitoring systems capturing and reporting accurate data
-    *   All deployment verification tests passing
+    *   Core application workflows (current version) are functional in production.
+    *   Essential monitoring tools are active and capturing data.
+    *   `README.md` updated with correct deployment information for the current version.
 *   **Risks:**
-    *   Production deployment might expose unexpected environment-specific issues
-    *   Performance in production might differ significantly from local development
-    *   Security vulnerabilities might only be apparent in production configuration
-*   **Core Document Updates:** `architecture.mdc` (finalize production architecture documentation).
-*   **Progress:** Not Started
+    *   Previously uncaught critical bugs in the current codebase emerge during production smoke testing, potentially blocking wider use.
+    *   Deployment environment misconfiguration impacts user experience even for current features.
+*   **Core Document Updates:** `README.md` (add deployment links and instructions).
+*   **Progress:** ⚪ Pending
 
-## Step 7: Documentation and Handoff
-*   **Goal:** Complete deployment documentation, create operational runbooks, and prepare for ongoing maintenance.
+## Step 7: Post-Deployment - Prioritized Bug Fixing and Improvement Planning
+*   **Goal:** Gather initial feedback from the deployed *current version*, identify critical bugs from real-world usage, and plan the next iteration of development focused on bug fixing and product improvements. This step is outside the immediate scope of *this deployment plan* but outlines the immediate next actions.
 *   **Actions:**
-    1.  **Deployment Documentation:**
-        *   Update DEPLOYMENT.md with actual production URLs and configuration
-        *   Create comprehensive setup guide for new developers
-        *   Document troubleshooting procedures and common issues
-        *   Add monitoring and alerting documentation
-    2.  **Operational Runbooks:**
-        *   Create incident response procedures
-        *   Document rollback and recovery procedures
-        *   Create monitoring and alerting runbooks
-        *   Add performance optimization and scaling guidance
-    3.  **README and Project Documentation:**
-        *   Update README.md with deployment status and production URLs
-        *   Add badges for build status, deployment status, and test coverage
-        *   Create user guides for accessing and using the production application
-        *   Document API endpoints and integration guides
-    4.  **Handoff and Training:**
-        *   Create video walkthrough of deployment process
-        *   Document ongoing maintenance procedures
-        *   Set up access and permissions for team members
-        *   Create escalation procedures for production issues
-    5.  **Knowledge Transfer:**
-        *   Document architectural decisions and trade-offs
-        *   Create troubleshooting guides for common deployment issues
-        *   Document monitoring and alerting configuration
-        *   Add contact information and support channels
+    1.  **Monitor Initial Usage:** Closely monitor Sentry and Vercel Analytics for errors and performance issues encountered by initial users of the deployed version.
+    2.  **Gather Feedback:** Collect feedback from initial users on critical bugs or usability issues in the current application.
+    3.  **Prioritize Issues:** Create a prioritized backlog of bugs and essential improvements based on initial deployment experiences and the state of the current application.
+    4.  **Plan Next Implementation:** Develop a new implementation plan to address the prioritized backlog of bugs and critical improvements.
 *   **Validation:**
-    *   All documentation updated and comprehensive
-    *   Operational runbooks created and accessible
-    *   README reflects current production status
-    *   Handoff materials complete and usable
-    *   Knowledge transfer documentation comprehensive
+    *   A prioritized list of issues, based on the deployed version, is created.
+    *   A new implementation plan is drafted for the next cycle of work (bug fixing and improvements).
 *   **Risks:**
-    *   Documentation might become outdated quickly without proper maintenance
-    *   Runbooks might be insufficient for complex production issues
-    *   Knowledge transfer might be incomplete for critical operational procedures
-*   **Core Document Updates:** All core documents finalized with production deployment information.
-*   **Progress:** Not Started
+    *   Overwhelming number of issues reported from the current version, making prioritization difficult.
+*   **Core Document Updates:** None for this step in the current plan; new plan will be created.
+*   **Progress:** ⚪ Pending (Post-Deployment)
 
 ## Step 8: Cleanup and Final Validation
 *   **Goal:** Ensure deployment infrastructure is clean, optimized, and production-ready with all temporary artifacts removed.

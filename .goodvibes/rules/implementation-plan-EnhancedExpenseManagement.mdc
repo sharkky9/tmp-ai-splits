@@ -1,0 +1,369 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Implementation Plan: Enhanced Expense Management
+
+**Goal:** To revamp the group expense management system to provide a seamless hybrid of powerful manual expense controls and intuitive natural language processing for expense entry, alongside clear balance tracking and settlement-path suggestions, based on the principles outlined in the "Radically Improved Group Expense Management" product document.
+
+**(If applicable) Related Backlog Item ID:** N/A
+
+## Implementation Context
+
+### User & Functional Perspective
+- **Problem Solved:** Addresses the need for a more intuitive, flexible, and transparent way for groups to manage shared expenses, reducing the friction of manual entry and providing clarity on financial standings. Users can describe expenses naturally or use detailed forms, and easily understand how debts are calculated.
+- **Key Workflows:**
+    1.  User describes an expense in natural language; AI parses it, shows a preview, and allows quick-add or fine-tuning.
+    2.  User opts for manual entry, filling out a detailed form with advanced split options.
+    3.  Users view a dynamic list of all group expenses.
+    4.  Users view a persistent summary of their and other members' balances.
+    5.  System suggests a simplified path for settling debts.
+- **Core Capabilities:**
+    *   Natural language expense parsing (text-based).
+    *   Manual expense entry with multiple split methods (Equal, Amount, Percentage).
+    *   Expense list display.
+    *   Real-time group balance calculation and display.
+    *   "Simplify Debts" logic.
+
+### Technical Implementation
+- **Architecture Fit:** This involves enhancing existing components (`GroupDetailView`, `NLLExpenseInput`) and introducing new components for manual expense forms, expense lists, and balance displays. Backend logic (likely Supabase functions) will be expanded to handle more complex expense creation, splitting, and balance calculations.
+- **Affected Components:**
+    *   `app_code/src/components/Groups/GroupDetailView.tsx`: Will be significantly restructured to incorporate the new expense list, manual entry modals, and balances sidebar.
+    *   `app_code/src/components/Expenses/NLLExpenseInput.tsx`: Will be enhanced for better parsing, preview cards, and hooks into the manual "fine-tune" modal.
+    *   Supabase schema: Likely needs new tables or modifications for `expenses` (to include categories, multiple payers, status) and `expense_splits` (to detail how each expense is divided among participants).
+    *   Supabase functions: New or updated functions for parsing NLP input, creating expenses with complex splits, and calculating balances.
+- **Data Model Changes:**
+    *   `expenses` table: Consider adding `category`, `status` (e.g., "pending", "confirmed"), `tags` (as text array). May need support for multiple payers (e.g., a JSONB field or a separate `expense_payers` table).
+    *   `expense_splits` table: `expense_id`, `user_id`, `amount`, `share_description` (e.g., for "explainability").
+    *   `group_members` might need `balance` field (though calculating this on the fly might be better for real-time accuracy).
+- **New Libraries/Tools:** None anticipated beyond existing stack (`@tanstack/react-query`, `supabase`, `date-fns`, `lucide-react`, Shadcn UI).
+
+### Boundaries & Constraints
+- **Out of Scope (for this iteration, based on product doc revisions):**
+    *   OCR/image/voice expense entry.
+    *   Multi-currency support and currency conversion.
+    *   Advanced filtering, sorting, and searching of expenses beyond basic display.
+    *   Itemization of expenses within a single transaction.
+    *   Direct payment integrations for settlement.
+    *   Notifications.
+- **Limitations:** Initial NLP parsing will be rule-based for key entities; complex ambiguous sentences might require manual adjustment.
+- **Unchanged Functionality:** Core user authentication, group creation, basic member addition (though member display will be enhanced in balance views).
+
+## Relevant Files
+
+- **Modified:**
+    - `app_code/src/components/Groups/GroupDetailView.tsx`: Integrate new expense components and layout.
+    - `app_code/src/components/Expenses/NLLExpenseInput.tsx`: Enhance for NLP parsing, preview, and "fine-tune" hook.
+    - `app_code/src/types/database.ts`: Update/add types for `Expense`, `ExpenseSplit`, `MemberBalance`.
+    - `supabase/migrations/*`: New migration files for schema changes.
+    - Supabase functions (e.g., `parse-expense`, new `create-expense`, `calculate-balances`).
+
+- **New:**
+    - `app_code/src/components/Expenses/ManualExpenseForm.tsx`: Form for detailed manual expense entry.
+    - `app_code/src/components/Expenses/ExpenseList.tsx`: Component to display list of expenses.
+    - `app_code/src/components/Expenses/ExpenseListItem.tsx`: Individual expense card/row in the list.
+    - `app_code/src/components/Groups/GroupBalancesView.tsx`: Sidebar/drawer for displaying member balances.
+    - `app_code/src/components/Expenses/ExpenseCategoryIcon.tsx`: Component to display icons for expense categories.
+    - `app_code/src/lib/expenseUtils.ts`: Utility functions for split calculations, balance calculations, currency formatting (basic), etc.
+    - `app_code/src/lib/nlpUtils.ts`: Basic client-side NLP parsing utilities (if any parsing is done client-side before sending to backend).
+    - `app_code/src/hooks/useExpenses.ts`: React Query hook for fetching and managing expenses.
+    - `app_code/src/hooks/useBalances.ts`: React Query hook for fetching and managing balances.
+    - Unit/integration tests for all new/modified components and utilities.
+
+## Core Documents Affected
+
+- `architecture.mdc`: Update with new components and data flow for expense management.
+- `design.mdc`: Add new user flows and UI mockups/descriptions for the enhanced expense features.
+- `tech-stack.mdc`: Verify no new additions are needed.
+
+## Success Metrics
+- High task completion rate for adding expenses (both AI-assisted and manual).
+- Users successfully utilize various split methods (equal, amount, percentage).
+- Positive user feedback on the clarity of expense breakdowns and balance summaries.
+- Increased engagement with the expense tracking features.
+- Reduction in user confusion regarding who owes what.
+- 90%+ test coverage for new backend logic (Supabase functions) and critical frontend utility functions (`expenseUtils.ts`).
+
+---
+
+## Step 0: Test Scaffolding & Setup
+*   **Goal:** Prepare the development environment, define initial data structures, and create failing test stubs for key functionalities.
+*   **Actions:**
+    1.  **Data Model Definition:** Draft and review initial Supabase schema changes for `expenses` and `expense_splits` tables in a local SQL file. Define TypeScript types in `app_code/src/types/database.ts`.
+    2.  **Test Stubs (Frontend Utilities):** Create failing test stubs in `app_code/src/lib/expenseUtils.test.ts` for:
+        *   `calculateEqualSplit(totalAmount, numberOfMembers)`
+        *   `validateAmountSplits(totalAmount, memberAmounts)`
+        *   `validatePercentageSplits(memberPercentages)`
+        *   `calculateMemberBalances(expenses, members)`
+        *   `simplifyDebts(balances)`
+    3.  **Test Stubs (Backend Logic - conceptual):** Outline test cases for Supabase functions (e.g., creating an expense with equal splits, amount splits, percentage splits).
+    4.  **Component Shells:** Create basic placeholder files for new components listed in "Relevant Files".
+*   **Validation:**
+    *   SQL schema draft exists and types are defined.
+    *   All utility function test stubs are present and failing.
+    *   Component files are created.
+*   **Risks:** Initial data model might overlook key fields requiring later rework. Incomplete understanding of all calculation edge cases for test stubs.
+*   **Core Document Updates:** None for this step.
+*   **Progress:** Not Started
+
+## Step 1: Backend - Expense & Split Data Structures
+*   **Goal:** Implement and deploy the core database schema changes for storing expenses and their splits.
+*   **Actions:**
+    1.  **Test (Schema):** N/A directly, but ensure migration applies cleanly.
+    2.  **Implementation:** Create Supabase migration files for the new/modified `expenses` and `expense_splits` tables. Include fields for description, amount, payer_id, group_id, date, category, and for splits: expense_id, member_id, split_amount.
+    3.  **Deploy:** Apply migrations to local Supabase instance.
+*   **Validation Criteria:**
+    *   Migrations apply successfully.
+    *   Tables `expenses` and `expense_splits` exist in the database with correct columns and types.
+    *   Can manually insert and retrieve sample expense and split data via Supabase Studio.
+*   **Risks:** Migration errors; incorrect data types chosen; forgetting crucial indices for performance.
+*   **Core Document Updates:** `architecture.mdc` (detail new table structures).
+*   **Progress:** Not Started
+
+## Step 2: Backend - Basic Expense Creation Logic
+*   **Goal:** Create a Supabase function to allow creating a simple expense with an equal split.
+*   **Actions:**
+    1.  **Test:** Write a test for the Supabase function (e.g., using a local test runner or `pgTAP` if set up) to verify an expense and its corresponding equal splits are created.
+    2.  **Implementation:** Develop a Supabase Edge Function (`create-expense-equal-split`) that takes expense details (description, amount, payer, group_id, date, category, participant_ids) and creates an entry in `expenses` and corresponding entries in `expense_splits` (dividing the amount equally among participants).
+*   **Validation Criteria:**
+    *   Supabase function test passes.
+    *   Calling the function successfully creates records in `expenses` and `expense_splits` tables.
+    *   Split amounts are calculated correctly for equal splits.
+*   **Risks:** Errors in SQL for inserting into multiple tables; off-by-one errors in split calculations.
+*   **Core Document Updates:** `architecture.mdc` (document new Supabase function).
+*   **Progress:** Not Started
+
+## Step 3: Frontend - Manual Expense Form (UI Shell & Basic State)
+*   **Goal:** Create the UI for the `ManualExpenseForm.tsx` component, allowing input for all necessary fields for a basic expense.
+*   **Actions:**
+    1.  **Test (Component):** Write basic rendering tests for `ManualExpenseForm.tsx` ensuring all input fields (description, amount, date, category select, payer select) are present.
+    2.  **Implementation:**
+        *   Develop the `ManualExpenseForm.tsx` component UI using Shadcn components.
+        *   Implement local state management for form fields.
+        *   Create `ExpenseCategoryIcon.tsx` and use it.
+        *   Populate category and payer selects (payers fetched from group members).
+*   **Validation Criteria:**
+    *   Component renders correctly with all fields.
+    *   Form inputs update component state.
+    *   Category and payer dropdowns are populated (with mock data or basic fetch).
+*   **Risks:** UI layout issues; complex state management for dynamic fields later (splits).
+*   **Core Document Updates:** `design.mdc` (capture form UI).
+*   **Progress:** Not Started
+
+## Step 4: Frontend - Submitting Manual Expense (Equal Split)
+*   **Goal:** Connect the `ManualExpenseForm.tsx` to the backend to submit a new expense with an equal split.
+*   **Actions:**
+    1.  **Test (Integration):** Write a test that simulates filling the form and submitting, mocking the Supabase function call and verifying the payload.
+    2.  **Implementation:**
+        *   Implement submission logic in `ManualExpenseForm.tsx` to call the `create-expense-equal-split` Supabase function.
+        *   Add basic form validation (required fields, amount is a number).
+        *   Provide user feedback on submission (loading, success, error).
+    3.  **Implement `expenseUtils.ts`: `calculateEqualSplit`** function and ensure its tests pass.
+*   **Validation Criteria:**
+    *   Form submission successfully calls the Supabase function with correct data.
+    *   Expense is created in the database with correct equal splits.
+    *   User sees appropriate feedback.
+    *   `calculateEqualSplit` tests pass.
+*   **Risks:** Incorrect data mapping between form and function payload; error handling for function calls.
+*   **Core Document Updates:** None.
+*   **Progress:** Not Started
+
+## Step 5: Frontend - Displaying Expenses (ExpenseList & ExpenseListItem)
+*   **Goal:** Create components to fetch and display a list of expenses for the group.
+*   **Actions:**
+    1.  **Test (Components):**
+        *   Write rendering tests for `ExpenseList.tsx` (handles loading/empty states and maps over items).
+        *   Write rendering tests for `ExpenseListItem.tsx` (displays individual expense details: description, amount, payer, date, category).
+    2.  **Implementation:**
+        *   Develop `ExpenseListItem.tsx` to display data for a single expense.
+        *   Develop `ExpenseList.tsx` to fetch expenses for the current group (initially all, no pagination) using a new React Query hook `useExpenses.ts` and render `ExpenseListItem` for each.
+        *   Integrate `ExpenseList.tsx` into `GroupDetailView.tsx`.
+*   **Validation Criteria:**
+    *   `ExpenseList.tsx` correctly fetches and displays a list of expenses.
+    *   `ExpenseListItem.tsx` renders expense details accurately.
+    *   Loading and empty states are handled.
+*   **Risks:** Performance issues if fetching many expenses; prop-drilling if not using context/hooks effectively.
+*   **Core Document Updates:** `design.mdc` (capture expense list UI).
+*   **Progress:** Not Started
+
+## Step 6: Backend - Advanced Split Logic (Amount & Percentage)
+*   **Goal:** Enhance the backend to support creating expenses with "by amount" and "by percentage" splits.
+*   **Actions:**
+    1.  **Test (Supabase Function):** Write tests for new/updated Supabase function(s) to handle:
+        *   Creating an expense where splits are defined by specific amounts per member.
+        *   Creating an expense where splits are defined by percentages per member.
+        *   Validation (total amounts/percentages match expense total).
+    2.  **Implementation:**
+        *   Modify `create-expense` (or create new specialized functions like `create-expense-custom-split`) Supabase function to accept an array of member splits (member_id, amount/percentage).
+        *   Implement backend validation to ensure total split amounts/percentages match the expense total.
+*   **Validation Criteria:**
+    *   Supabase function tests pass for amount and percentage splits.
+    *   Backend correctly rejects splits that don't sum up to the total expense amount (or 100%).
+    *   Expenses and `expense_splits` are correctly created for these new split types.
+*   **Risks:** Complex validation logic on the backend; handling floating point inaccuracies for percentages.
+*   **Core Document Updates:** `architecture.mdc` (document updated/new Supabase functions).
+*   **Progress:** Not Started
+
+## Step 7: Frontend - Manual Expense Form (Advanced Splits UI)
+*   **Goal:** Update `ManualExpenseForm.tsx` to include UI for selecting participants and defining splits by amount or percentage.
+*   **Actions:**
+    1.  **Test (Component):** Write tests for `ManualExpenseForm.tsx` to verify:
+        *   UI for selecting split method (Equal, Amount, Percentage).
+        *   UI for selecting participating members (checkbox list).
+        *   Conditional rendering of input fields for amounts/percentages per selected member.
+        *   Real-time validation display (e.g., "Total allocated: $X / $Y").
+    2.  **Implementation:**
+        *   Add controls to `ManualExpenseForm.tsx` for split method selection.
+        *   Display a list of group members with checkboxes for participation.
+        *   Dynamically render input fields for each selected member based on split method.
+        *   Implement client-side validation for splits (using `expenseUtils.ts` functions).
+    3.  **Implement `expenseUtils.ts`: `validateAmountSplits`, `validatePercentageSplits`** functions and ensure their tests pass.
+*   **Validation Criteria:**
+    *   Advanced split UI renders correctly and is interactive.
+    *   Client-side validation provides correct feedback.
+    *   State updates correctly as user defines custom splits.
+    *   `validateAmountSplits` and `validatePercentageSplits` tests pass.
+*   **Risks:** Complex dynamic form state; ensuring UI is intuitive for advanced splits.
+*   **Core Document Updates:** `design.mdc` (capture advanced split UI).
+*   **Progress:** Not Started
+
+## Step 8: Frontend - Submitting Manual Expense (Advanced Splits)
+*   **Goal:** Connect the advanced split UI in `ManualExpenseForm.tsx` to the backend.
+*   **Actions:**
+    1.  **Test (Integration):** Write tests simulating form submission with amount and percentage splits, mocking backend calls.
+    2.  **Implementation:** Update form submission logic in `ManualExpenseForm.tsx` to pass the detailed split data to the appropriate Supabase function.
+*   **Validation Criteria:**
+    *   Form submission with custom splits successfully calls the backend.
+    *   Expenses are created with correct custom splits in the database.
+*   **Risks:** Incorrect payload construction for complex split data.
+*   **Core Document Updates:** None.
+*   **Progress:** Not Started
+
+## Step 9: Frontend - Enhanced NLLExpenseInput (Basic Parsing & Preview)
+*   **Goal:** Improve `NLLExpenseInput.tsx` to parse basic entities (amount, simple description) and display a preview card.
+*   **Actions:**
+    1.  **Test (Component):** Write tests for `NLLExpenseInput.tsx` to verify:
+        *   Basic parsing of text like "$50 for pizza" extracts amount and description.
+        *   A preview card is shown with parsed data.
+        *   "Quick Add" and "Fine-tune" buttons are present on the preview.
+    2.  **Implementation:**
+        *   Add a larger textarea to `NLLExpenseInput.tsx`.
+        *   Implement basic client-side parsing (e.g., using regex via `nlpUtils.ts`) or call a simple Supabase function for NLP. For now, focus on amount and a simple description. Assume current user is payer, and split is equal among all group members by default.
+        *   Create a "preview card" sub-component to display parsed info.
+        *   "Quick Add" button calls the existing equal split expense creation logic.
+        *   "Fine-tune" button opens the `ManualExpenseForm` modal, pre-filled with parsed data.
+    3.  **Develop `nlpUtils.ts`** for any client-side parsing helpers.
+*   **Validation Criteria:**
+    *   Basic NLP correctly extracts amount and description for simple phrases.
+    *   Preview card displays data and action buttons.
+    *   "Fine-tune" pre-fills the manual form.
+*   **Risks:** NLP parsing can be brittle; over-complicating client-side parsing.
+*   **Core Document Updates:** `design.mdc` (capture NLP input and preview card UI).
+*   **Progress:** Not Started
+
+## Step 10: Frontend - Real-time Entity Recognition (Chips) in NLLExpenseInput
+*   **Goal:** Enhance `NLLExpenseInput.tsx` to show "chips" for detected entities (people, amounts, dates, categories) as the user types.
+*   **Actions:**
+    1.  **Test (Component):** Write tests to verify that as text is typed, corresponding chips appear below/near the input area.
+    2.  **Implementation:**
+        *   In `NLLExpenseInput.tsx`, as user types, continuously parse the input (debounced).
+        *   Detect entities (mocked or very basic detection for now for people, dates, categories, amount already done).
+        *   Render visual "chips" for these detected entities.
+        *   (Future: Clicking a chip could allow editing/confirming that entity).
+*   **Validation Criteria:**
+    *   Chips for amounts, and placeholders for people/dates/categories appear as user types relevant keywords.
+*   **Risks:** Performance of real-time parsing and rendering; visual clutter if too many chips.
+*   **Core Document Updates:** `design.mdc`.
+*   **Progress:** Not Started
+
+## Step 11: Backend - Balance Calculation Logic
+*   **Goal:** Create backend logic to calculate current balances for all group members.
+*   **Actions:**
+    1.  **Test (Supabase Function):** Write tests for a Supabase function (`get-group-balances`) that takes a `group_id` and returns a list of members with their net balances (total paid - total share).
+    2.  **Implementation:** Develop the `get-group-balances` Supabase function. This will involve:
+        *   Summing all amounts paid by each user in `expenses`.
+        *   Summing all shares for each user from `expense_splits`.
+        *   Calculating net balance for each member.
+*   **Validation Criteria:**
+    *   Supabase function tests pass with various expense scenarios (payer is participant, payer is not, multiple expenses).
+    *   Balances are calculated correctly.
+*   **Risks:** Complex SQL queries for aggregation; performance with many expenses.
+*   **Core Document Updates:** `architecture.mdc`.
+*   **Progress:** Not Started
+
+## Step 12: Frontend - Group Balances View
+*   **Goal:** Display member balances in a dedicated UI section.
+*   **Actions:**
+    1.  **Test (Component):** Write tests for `GroupBalancesView.tsx` to verify it fetches and displays member names and their balances (formatted as "owes X" or "gets back Y" or "settled up").
+    2.  **Implementation:**
+        *   Develop `GroupBalancesView.tsx`.
+        *   Use a new React Query hook `useBalances.ts` to call the `get-group-balances` Supabase function.
+        *   Format and display balances clearly.
+        *   Integrate `GroupBalancesView.tsx` into `GroupDetailView.tsx` (e.g., as a sidebar).
+    3.  **Implement `expenseUtils.ts`: `calculateMemberBalances`** (if needed for client-side version or testing) and `formatCurrency` (basic version) and ensure tests pass.
+*   **Validation Criteria:**
+    *   Balances view correctly displays data from the backend.
+    *   Formatting of amounts and status (owes/gets back) is correct.
+*   **Risks:** UI layout for balances; real-time updates might be challenging without websockets (rely on refetching for now).
+*   **Core Document Updates:** `design.mdc`.
+*   **Progress:** Not Started
+
+## Step 13: Explainability - Show Split Rationale
+*   **Goal:** On the `ExpenseListItem.tsx`, allow users to see how a split was calculated.
+*   **Actions:**
+    1.  **Test (Component):** Add tests to `ExpenseListItem.tsx` to verify that hovering/clicking an expense shows a breakdown of splits per member (e.g., "Alice's share: $10 (split equally from $30 total with 3 people)").
+    2.  **Implementation:**
+        *   In `ExpenseListItem.tsx`, when displaying an expense that includes splits, add a tooltip or expandable section.
+        *   This section should iterate over `expense_splits` for that expense and display each member's name and their share, along with a brief explanation (e.g., "Paid by X", "Y's share: Z").
+        *   For "equal" splits, the rationale is simple. For "amount" or "percentage", it will just show their defined share.
+*   **Validation Criteria:**
+    *   Split rationale is displayed clearly and accurately matches the data.
+*   **Risks:** Making the explanation concise yet clear; UI for the popover/tooltip.
+*   **Core Document Updates:** `design.mdc`.
+*   **Progress:** Not Started
+
+## Step 14: Simplify Debts Logic
+*   **Goal:** Implement and display a simplified list of transactions to settle debts.
+*   **Actions:**
+    1.  **Test (Utility Function):** Tests for `simplifyDebts(balances)` in `expenseUtils.test.ts` cover various scenarios (e.g., A owes B, B owes C; circular debts) and ensure the minimum number of transactions are output.
+    2.  **Implementation (`expenseUtils.ts`):** Implement the `simplifyDebts` algorithm. This is a known algorithm (often using a min-cost max-flow approach or simpler greedy methods for P2P debts).
+    3.  **Implementation (Frontend):** In `GroupBalancesView.tsx`, after displaying individual balances, add a section "Settlement Suggestions". Call `simplifyDebts` with the member balances and display the suggested transactions (e.g., "Alice pays Charles $15").
+*   **Validation Criteria:**
+    *   `simplifyDebts` tests pass.
+    *   Settlement suggestions in the UI are correct and reflect the simplified path.
+*   **Risks:** Algorithm complexity for `simplifyDebts`; clearly presenting the settlement steps.
+*   **Core Document Updates:** None.
+*   **Progress:** Not Started
+
+## Step 15: UI Polish and Integration
+*   **Goal:** Ensure all new components are well-integrated into `GroupDetailView.tsx`, UI is polished, and basic accessibility is considered.
+*   **Actions:**
+    1.  **Review and Refine:** Go through all new UIs, ensuring consistent styling, clear labels, and intuitive interactions.
+    2.  **Integration:** Ensure `ManualExpenseForm` modal, `ExpenseList`, and `GroupBalancesView` are correctly placed and interact within `GroupDetailView`.
+    3.  **Accessibility Check:** Basic checks for keyboard navigation, sufficient color contrast, ARIA attributes where needed.
+*   **Validation Criteria:**
+    *   Cohesive user experience on the group detail page.
+    *   No obvious visual bugs or inconsistencies.
+    *   Basic accessibility checks pass.
+*   **Risks:** Last-minute integration issues; overlooking UI inconsistencies.
+*   **Core Document Updates:** Final review of `design.mdc`.
+*   **Progress:** Not Started
+
+## Step n: Clean Up and Testing
+*   **Goal:** Ensure the codebase is clean, all tests pass, and core documents reflect the changes.
+*   **Actions:**
+    1.  **Code Review & Refinement:** Conduct a thorough review of all new/modified code.
+    2.  **Remove Temporary Artifacts:** Delete console logs, temporary comments, etc.
+    3.  **Resolve Minor Issues:** Address any minor outstanding TODOs or FIXMEs.
+    4.  **Adherence to Standards & Consistency Review:** Verify against `tech-stack.mdc`, style guides.
+    5.  **Comprehensive Test Execution:** Run all unit, integration, and (if any) E2E tests.
+    6.  **Address Test Failures (if any):** Diagnose and correct.
+    7.  **Manual User Acceptance Testing (UAT):** Walk through all key user flows described in the product document.
+*   **Validation:**
+    *   No temporary code remains. Code adheres to all guidelines.
+    *   All automated tests pass.
+    *   Feature functions as expected during UAT.
+*   **Risks:** Overlooking temporary code; regressions during cleanup.
+*   **Core Document Updates:** Final check of `architecture.mdc`, `design.mdc` for consistency.
+*   **Progress:** Not Started
