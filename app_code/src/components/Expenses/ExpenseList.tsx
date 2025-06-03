@@ -20,12 +20,20 @@ import { useExpenses } from '../../hooks/useExpenses'
 
 interface ExpenseListProps {
   groupId: string
+  groupMembers?: GroupMemberWithProfile[]
+  onEditExpense?: (expense: Expense) => void
+  onDeleteExpense?: (expense: Expense) => void
 }
 
 /**
  * Component to display a list of expenses for a group
  */
-export function ExpenseList({ groupId }: ExpenseListProps) {
+export function ExpenseList({
+  groupId,
+  groupMembers = [],
+  onEditExpense,
+  onDeleteExpense,
+}: ExpenseListProps) {
   const { data: expenses, isLoading, error } = useExpenses(groupId)
 
   if (isLoading) {
@@ -59,7 +67,9 @@ export function ExpenseList({ groupId }: ExpenseListProps) {
         <ExpenseListItem
           key={expense.id}
           expense={expense}
-          groupMembers={[]} // TODO: Pass actual group members
+          groupMembers={groupMembers}
+          onEdit={onEditExpense}
+          onDelete={onDeleteExpense}
         />
       ))}
     </div>

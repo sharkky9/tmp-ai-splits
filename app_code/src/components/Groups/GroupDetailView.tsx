@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabaseClient'
 import { useAuthContext } from '@/contexts/AuthContext'
 import { AddMemberForm } from './AddMemberForm'
 import { NLLExpenseInput } from '@/components/Expenses/NLLExpenseInput'
+import GroupBalances from './GroupBalances'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -232,6 +233,9 @@ export function GroupDetailView({ groupId }: GroupDetailViewProps) {
           )}
         </CardContent>
       </Card>
+
+      {/* Group Balances Section */}
+      <GroupBalances groupId={groupId} />
 
       {/* Expenses Section */}
       <Card>

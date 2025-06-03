@@ -90,9 +90,8 @@ export function ManualExpenseForm({
   onSubmit,
   initialData,
 }: ManualExpenseFormProps) {
-  // For now, we'll use a mock implementation since the hook isn't implemented yet
-  const isLoading = false
-  const error = null
+  // Use the actual hook
+  const { mutate, isPending, error } = useCreateExpense()
 
   // Form state
   const [formData, setFormData] = useState<FormData>({
@@ -106,7 +105,7 @@ export function ManualExpenseForm({
     split_method: (initialData?.split_method as SplitMethod) || 'equal',
     participants: [],
     custom_amounts: {},
-    custom_percentages: {}
+    custom_percentages: {},
   })
 
   const [errors, setErrors] = useState<FormErrors>({})
@@ -293,7 +292,16 @@ export function ManualExpenseForm({
       ;(expenseRequest as any).tags = formData.tags
     }
 
-    onSubmit(expenseRequest)
+    // Use the hook to submit the expense directly to the backend
+    mutate(expenseRequest, {
+      onSuccess: (data) => {
+        // Call the onSubmit callback to notify parent component with original request
+        onSubmit(expenseRequest)
+      },
+      onError: (error) => {
+        setErrors({ general: error.message })
+      },
+    })
   }
 
   return (
@@ -315,7 +323,9 @@ export function ManualExpenseForm({
             <div className='mb-4 p-3 bg-red-50 border border-red-200 rounded-md'>
               <div className='flex items-center'>
                 <AlertCircle className='text-red-500 mr-2' size={16} />
-                <span className='text-red-700 text-sm'>{(error as any)?.message || 'An error occurred'}</span>
+                <span className='text-red-700 text-sm'>
+                  {(error as any)?.message || 'An error occurred'}
+                </span>
               </div>
             </div>
           )}
@@ -729,16 +739,16 @@ export function ManualExpenseForm({
                 type='button'
                 onClick={onClose}
                 className='px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500'
-                disabled={isLoading}
+                disabled={isPending}
               >
                 Cancel
               </button>
               <button
                 type='submit'
-                disabled={isLoading}
+                disabled={isPending}
                 className='px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed'
               >
-                {isLoading ? 'Creating...' : 'Create Expense'}
+                {isPending ? 'Creating...' : 'Create Expense'}
               </button>
             </div>
           </form>

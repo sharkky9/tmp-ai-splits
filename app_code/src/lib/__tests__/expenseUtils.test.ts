@@ -1,4 +1,3 @@
-import { describe, it, expect } from '@jest/globals'
 import {
   calculateEqualSplit,
   validateAmountSplits,
@@ -179,8 +178,40 @@ describe('expenseUtils', () => {
     })
 
     it('should handle placeholder members', () => {
-      // Test implementation needed
-      expect(true).toBe(false) // This should fail initially
+      const mockExpensesWithPlaceholder = [
+        {
+          id: '1',
+          group_id: 'group1',
+          description: 'Dinner',
+          total_amount: 30,
+          currency: 'USD',
+          date_of_expense: '2024-01-01',
+          payers: [{ user_id: 'user1', amount: 30 }],
+          participants: [
+            { user_id: 'user1', amount: 10 },
+            { user_id: 'placeholder1', amount: 20 }, // Placeholder member
+          ],
+          status: 'confirmed' as const,
+          created_by: 'user1',
+          created_at: '2024-01-01T00:00:00Z',
+          updated_at: '2024-01-01T00:00:00Z',
+        },
+      ]
+
+      const mockMembersWithPlaceholder = [
+        { id: 'member1', user_id: 'user1', name: 'Alice' },
+        { id: 'placeholder1', name: 'Bob (Guest)' }, // No user_id for placeholder
+      ]
+
+      const result = calculateMemberBalances(
+        mockExpensesWithPlaceholder,
+        mockMembersWithPlaceholder
+      )
+
+      expect(result).toHaveLength(2)
+      expect(result.find((b) => b.user_id === 'user1')?.net_balance).toBe(20) // Paid 30, owes 10
+      expect(result.find((b) => b.member_id === 'placeholder1')?.net_balance).toBe(-20) // Paid 0, owes 20
+      expect(result.find((b) => b.member_id === 'placeholder1')?.user_id).toBeUndefined()
     })
 
     it('should handle empty expenses array', () => {
@@ -249,8 +280,29 @@ describe('expenseUtils', () => {
     })
 
     it('should return minimum number of transactions', () => {
-      // Test for complex debt scenarios
-      expect(true).toBe(false) // This should fail initially
+      // Complex scenario with multiple creditors and debtors
+      const complexBalances: MemberBalance[] = [
+        { member_id: 'm1', name: 'Alice', net_balance: 15, total_paid: 50, total_owed: 35 },
+        { member_id: 'm2', name: 'Bob', net_balance: 5, total_paid: 25, total_owed: 20 },
+        { member_id: 'm3', name: 'Charlie', net_balance: -10, total_paid: 10, total_owed: 20 },
+        { member_id: 'm4', name: 'David', net_balance: -10, total_paid: 5, total_owed: 15 },
+      ]
+
+      const result = simplifyDebts(complexBalances)
+
+      // Should optimize to minimize transactions
+      // Alice gets 15, Bob gets 5 (total 20 owed)
+      // Charlie owes 10, David owes 10 (total 20 owed)
+      // Optimal solution: 2-3 transactions max
+      expect(result.length).toBeLessThanOrEqual(3)
+
+      // Verify totals balance out
+      const totalPaid = result.reduce((sum, debt) => sum + debt.amount, 0)
+      const expectedTotal = complexBalances
+        .filter((b) => b.net_balance > 0)
+        .reduce((sum, b) => sum + b.net_balance, 0)
+
+      expect(Math.abs(totalPaid - expectedTotal)).toBeLessThan(0.01)
     })
   })
 

@@ -44,7 +44,18 @@ An intelligent expense splitting application built with Next.js, Supabase, and O
 - Supabase account
 - OpenAI API key
 
-### Installation
+### Quick Setup
+
+1. **Clone and Setup**:
+
+```bash
+git clone <repository-url>
+cd tmp-ai-splits
+# Run the automated setup script
+./setup-dev-environment.sh
+```
+
+### Manual Installation
 
 1. Clone the repository:
 
@@ -72,6 +83,100 @@ pnpm dev
 ```
 
 5. Open [http://localhost:3000](http://localhost:3000) in your browser
+
+## 👨‍💻 Development Workflow & Quality Gates
+
+### Pre-commit Hooks
+
+Our git hooks automatically run before commits to ensure code quality:
+
+- **Code Formatting Check**: Ensures consistent code style with Prettier
+- **Linting**: Catches potential issues with ESLint
+- **Type Checking**: Validates TypeScript types
+
+### Pre-push Hooks
+
+Before code reaches the remote repository:
+
+- **Tests**: All tests must pass
+- **Build Verification**: Code must successfully build
+
+### CI/CD Pipeline
+
+Our GitHub Actions workflow includes multiple stages:
+
+#### 1. Validation Stage (runs on all pushes and PRs)
+
+- ✅ Type checking (`pnpm typecheck`)
+- ✅ Code formatting validation (`pnpm format:check`)
+- ✅ Linting (`pnpm lint`)
+- ✅ Test suite (`pnpm test`)
+
+#### 2. Deployment Stage (runs only on main/develop pushes)
+
+- 🚀 Only deploys if validation passes
+- 🏗️ Automated Vercel deployment
+- 🔄 Environment-specific configuration
+
+### Available Scripts
+
+```bash
+# Development
+pnpm dev                 # Start development server
+pnpm build              # Build for production
+pnpm start              # Start production server
+
+# Quality Assurance
+pnpm lint               # Run ESLint
+pnpm lint --fix         # Auto-fix linting issues
+pnpm typecheck          # Run TypeScript type checking
+pnpm format             # Auto-format code with Prettier
+pnpm format:check       # Check if code is properly formatted
+pnpm test               # Run test suite
+pnpm test:watch         # Run tests in watch mode
+
+# Deployment
+pnpm deploy             # Deploy to production
+pnpm deploy:preview     # Deploy to preview environment
+```
+
+### Why This Setup Prevents Deployment Failures
+
+1. **Early Detection**: Issues are caught locally before reaching CI/CD
+2. **Automated Validation**: No human error in running checks
+3. **Staged Pipeline**: Validation runs before deployment, not during
+4. **Clear Feedback**: Developers get immediate feedback on what needs fixing
+
+### Troubleshooting Common Issues
+
+If you encounter deployment failures:
+
+1. **Run locally first**:
+
+   ```bash
+   cd app_code
+   pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build
+   ```
+
+2. **Fix formatting issues**:
+
+   ```bash
+   pnpm format
+   ```
+
+3. **Fix linting issues**:
+
+   ```bash
+   pnpm lint --fix
+   ```
+
+4. **If git hooks aren't running**:
+   ```bash
+   # Re-run setup script
+   ./setup-dev-environment.sh
+   # Or manually
+   cd app_code && pnpm exec husky install
+   ```
 
 ## 📱 How to Use the Application
 
@@ -123,11 +228,20 @@ pnpm build
 
 ## 🚀 Deployment & CI/CD
 
-The application is automatically deployed via GitHub Actions:
+The application is automatically deployed via GitHub Actions with comprehensive quality gates:
 
-- **Production**: Pushes to `main` branch deploy to production URLs
-- **Staging**: Pushes to `develop` branch deploy to preview environment
-- **Pipeline**: Includes linting, testing, and automated deployment to Vercel
+### Deployment Flow
+
+1. **Developer pushes code** → Pre-commit hooks run locally
+2. **Code reaches GitHub** → Validation pipeline runs (type-check, lint, test)
+3. **Validation passes** → Deployment pipeline runs
+4. **Successful deployment** → Application updates live
+
+### Branch Strategy
+
+- **`main`**: Production deployments (production URLs)
+- **`develop`**: Staging deployments (preview environment)
+- **Pull Requests**: Validation only (no deployment)
 
 ### Environment Variables (Production)
 
@@ -171,6 +285,13 @@ Future improvements will be prioritized based on user feedback and usage analyti
 ## 🤝 Contributing
 
 This is currently a prototype in active development. Feedback and bug reports are welcome through the GitHub repository issues.
+
+### For New Contributors
+
+1. Run the setup script: `./setup-dev-environment.sh`
+2. Make your changes following our quality standards
+3. Git hooks will ensure your code meets standards before commit
+4. Submit a pull request - our CI will validate everything
 
 ## 📄 License
 

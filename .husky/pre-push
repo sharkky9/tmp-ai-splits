@@ -1,0 +1,21 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🚀 Running pre-push checks..."
+
+# Change to app_code directory and run checks
+cd app_code
+
+echo "🧪 Running tests..."
+if ! pnpm test; then
+  echo "❌ Tests failed. Please fix the failing tests before pushing."
+  exit 1
+fi
+
+echo "🏗️ Testing build..."
+if ! pnpm build; then
+  echo "❌ Build failed. Please fix the build errors before pushing."
+  exit 1
+fi
+
+echo "✅ All pre-push checks passed! Safe to push." 
