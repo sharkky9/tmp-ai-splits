@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { MemberBalance, SimplifiedDebt, Expense } from '../types/database'
+import { MemberBalance, SimplifiedDebt } from '../types/database'
 import { supabase } from '../lib/supabaseClient'
 import { calculateMemberBalances, simplifyDebts } from '../lib/expenseUtils'
 
@@ -59,7 +59,7 @@ export function useBalances(groupId: string) {
         user_id: member.user_id,
         name: member.is_placeholder
           ? member.placeholder_name
-          : (member.profiles as any)?.display_name || 'Unknown User',
+          : (member.profiles as { display_name?: string })?.display_name || 'Unknown User',
       }))
 
       // Calculate balances using our utility function
@@ -133,7 +133,7 @@ export function useSettlementSuggestions(groupId: string) {
           user_id: member.user_id,
           name: member.is_placeholder
             ? member.placeholder_name
-            : (member.profiles as any)?.display_name || 'Unknown User',
+            : (member.profiles as { display_name?: string })?.display_name || 'Unknown User',
         }))
 
         const balances = calculateMemberBalances(expenses || [], transformedMembers)
@@ -210,7 +210,7 @@ export function useMemberBalanceSummary(groupId: string, memberId: string) {
         user_id: member.user_id,
         name: member.is_placeholder
           ? member.placeholder_name
-          : (member.profiles as any)?.display_name || 'Unknown User',
+          : (member.profiles as { display_name?: string })?.display_name || 'Unknown User',
       }
 
       // Calculate balance for this specific member

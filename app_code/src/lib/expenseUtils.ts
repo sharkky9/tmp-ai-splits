@@ -1,6 +1,27 @@
-import { Expense, MemberBalance, SimplifiedDebt, ExpenseWithSplits } from '../types/database'
+import { Expense, ExpenseWithSplits, MemberBalance, SimplifiedDebt } from '../types/database'
 
-// Type definitions for split rationale functionality
+// Legacy data structure interfaces for backward compatibility
+interface LegacyPayer {
+  user_id: string
+  amount: number
+}
+
+interface LegacyParticipant {
+  user_id: string
+  amount: number
+}
+
+interface LegacyExpense {
+  payers?: LegacyPayer[]
+  participants?: LegacyParticipant[]
+  total_amount: number
+}
+
+interface EnhancedExpense {
+  payer_id?: string
+  total_amount: number
+}
+
 interface ExpenseParticipant {
   user_id?: string
   placeholder_name?: string
@@ -88,27 +109,30 @@ export function calculateMemberBalances(
 
   // Process each expense
   expenses.forEach((expense) => {
+    const legacyExpense = expense as unknown as LegacyExpense
+    const enhancedExpense = expense as unknown as EnhancedExpense
+
     // Add to payer's total_paid (handling different data structures)
-    if ((expense as any).payers) {
+    if (legacyExpense.payers) {
       // Legacy test data structure with payers array
-      ;(expense as any).payers.forEach((payer: any) => {
+      legacyExpense.payers.forEach((payer: LegacyPayer) => {
         const payerBalance = balanceMap.get(payer.user_id)
         if (payerBalance) {
           payerBalance.total_paid += payer.amount
         }
       })
-    } else if ((expense as any).payer_id) {
+    } else if (enhancedExpense.payer_id) {
       // Enhanced structure with payer_id (for CreateExpenseRequest-style data)
-      const payerBalance = balanceMap.get((expense as any).payer_id)
+      const payerBalance = balanceMap.get(enhancedExpense.payer_id)
       if (payerBalance) {
         payerBalance.total_paid += expense.total_amount
       }
     }
 
     // Add to each participant's total_owed
-    if ((expense as any).participants) {
+    if (legacyExpense.participants) {
       // Legacy test data structure with participants array
-      ;(expense as any).participants.forEach((participant: any) => {
+      legacyExpense.participants.forEach((participant: LegacyParticipant) => {
         const memberBalance = balanceMap.get(participant.user_id)
         if (memberBalance) {
           memberBalance.total_owed += participant.amount
@@ -197,7 +221,7 @@ export function formatCurrency(amount: number, currency: string = 'USD'): string
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(amount)
-  } catch (error) {
+  } catch {
     // Fallback for unsupported currencies
     return `$${amount.toFixed(2)}`
   }

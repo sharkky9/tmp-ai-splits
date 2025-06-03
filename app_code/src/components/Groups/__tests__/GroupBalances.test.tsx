@@ -3,24 +3,12 @@ import { render, screen, waitFor, fireEvent, act } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import GroupBalances from '../GroupBalances'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import * as balanceUtils from '../../../lib/balanceUtils'
+import * as expenseUtils from '../../../lib/expenseUtils'
 
 // Mock Supabase client
 jest.mock('@supabase/auth-helpers-nextjs', () => ({
   createClientComponentClient: jest.fn(),
-}))
-
-// Mock the formatCurrency function properly
-jest.mock('../../../lib/expenseUtils', () => ({
-  formatCurrency: jest.fn((amount: number) => `$${amount.toFixed(2)}`),
-  simplifyDebts: jest.fn(() => [
-    {
-      from_member_id: 'member-3',
-      from_name: 'Charlie Wilson',
-      to_member_id: 'member-2',
-      to_name: 'Bob Johnson',
-      amount: 20,
-    },
-  ]),
 }))
 
 // Mock the balance utilities
@@ -30,37 +18,52 @@ jest.mock('../../../lib/balanceUtils', () => ({
     if (amount < -0.01) return `Owes $${Math.abs(amount).toFixed(2)}`
     return 'Settled up'
   }),
-  calculateGroupBalances: jest.fn(() =>
-    Promise.resolve([
-      {
-        member_id: 'member-1',
-        user_id: 'user-1',
-        name: 'Alice Smith',
-        total_paid: 30,
-        total_owed: 30,
-        net_balance: 0,
-        is_placeholder: false,
-      },
-      {
-        member_id: 'member-2',
-        user_id: 'user-2',
-        name: 'Bob Johnson',
-        total_paid: 60,
-        total_owed: 40,
-        net_balance: 20,
-        is_placeholder: false,
-      },
-      {
-        member_id: 'member-3',
-        user_id: undefined,
-        name: 'Charlie Wilson',
-        total_paid: 0,
-        total_owed: 20,
-        net_balance: -20,
-        is_placeholder: true,
-      },
-    ])
+  calculateGroupBalances: jest.fn(() => [
+    {
+      member_id: 'member-1',
+      user_id: 'user-1',
+      name: 'Alice Smith',
+      total_paid: 30,
+      total_share: 30,
+      net_balance: 0,
+      is_placeholder: false,
+    },
+    {
+      member_id: 'member-2',
+      user_id: 'user-2',
+      name: 'Bob Johnson',
+      total_paid: 60,
+      total_share: 40,
+      net_balance: 20,
+      is_placeholder: false,
+    },
+    {
+      member_id: 'member-3',
+      user_id: undefined,
+      name: 'Charlie Wilson',
+      total_paid: 0,
+      total_share: 20,
+      net_balance: -20,
+      is_placeholder: true,
+    },
+  ]),
+  sortBalancesByAmount: jest.fn((balances) =>
+    [...balances].sort((a, b) => b.net_balance - a.net_balance)
   ),
+}))
+
+// Mock the expense utilities
+jest.mock('../../../lib/expenseUtils', () => ({
+  simplifyDebts: jest.fn(() => [
+    {
+      from_member_id: 'member-3',
+      from_name: 'Charlie Wilson',
+      to_member_id: 'member-2',
+      to_name: 'Bob Johnson',
+      amount: 20,
+    },
+  ]),
+  formatCurrency: jest.fn((amount: number) => `$${amount.toFixed(2)}`),
 }))
 
 const mockGroupMembers = [
@@ -122,6 +125,8 @@ describe('GroupBalances', () => {
   }
 
   beforeEach(() => {
+    jest.clearAllMocks()
+
     queryClient = new QueryClient({
       defaultOptions: {
         queries: { retry: false },
@@ -247,6 +252,9 @@ describe('GroupBalances', () => {
   })
 
   it('should display empty state when no balances', async () => {
+    // Override mock to return empty balances
+    ;(balanceUtils.calculateGroupBalances as jest.Mock).mockReturnValueOnce([])
+
     // Create mock chain for empty group members
     const emptyMembersMockChain = {
       select: jest.fn().mockReturnValue({
@@ -354,6 +362,37 @@ describe('GroupBalances', () => {
   })
 
   it('should handle no expenses scenario correctly', async () => {
+    // Override mock to return all settled balances (no expenses = no debts)
+    ;(balanceUtils.calculateGroupBalances as jest.Mock).mockReturnValueOnce([
+      {
+        member_id: 'member-1',
+        user_id: 'user-1',
+        name: 'Alice Smith',
+        total_paid: 0,
+        total_share: 0,
+        net_balance: 0,
+        is_placeholder: false,
+      },
+      {
+        member_id: 'member-2',
+        user_id: 'user-2',
+        name: 'Bob Johnson',
+        total_paid: 0,
+        total_share: 0,
+        net_balance: 0,
+        is_placeholder: false,
+      },
+      {
+        member_id: 'member-3',
+        user_id: undefined,
+        name: 'Charlie Wilson',
+        total_paid: 0,
+        total_share: 0,
+        net_balance: 0,
+        is_placeholder: true,
+      },
+    ])
+
     // Mock group members query
     const membersMock = {
       select: jest.fn().mockReturnValue({
@@ -390,7 +429,7 @@ describe('GroupBalances', () => {
 
     // All balances should be settled (since no expenses)
     const settledTexts = screen.getAllByText('Settled up')
-    expect(settledTexts.length).toBeGreaterThan(2) // At least 3 balance items + 1 legend = 4+
+    expect(settledTexts.length).toBeGreaterThanOrEqual(3) // At least 3 balance items
   })
 
   it('should show correct visual indicators for different balance types', async () => {
@@ -443,6 +482,40 @@ describe('GroupBalances', () => {
   })
 
   it('should not display settlement suggestions when all balances are settled', async () => {
+    // Override mocks for settled state
+    ;(balanceUtils.calculateGroupBalances as jest.Mock).mockReturnValueOnce([
+      {
+        member_id: 'member-1',
+        user_id: 'user-1',
+        name: 'Alice Smith',
+        total_paid: 0,
+        total_share: 0,
+        net_balance: 0,
+        is_placeholder: false,
+      },
+      {
+        member_id: 'member-2',
+        user_id: 'user-2',
+        name: 'Bob Johnson',
+        total_paid: 0,
+        total_share: 0,
+        net_balance: 0,
+        is_placeholder: false,
+      },
+      {
+        member_id: 'member-3',
+        user_id: undefined,
+        name: 'Charlie Wilson',
+        total_paid: 0,
+        total_share: 0,
+        net_balance: 0,
+        is_placeholder: true,
+      },
+    ])
+
+    // No debts to settle
+    ;(expenseUtils.simplifyDebts as jest.Mock).mockReturnValueOnce([])
+
     // Mock group members query with all settled balances
     const settledMembersMock = {
       select: jest.fn().mockReturnValue({

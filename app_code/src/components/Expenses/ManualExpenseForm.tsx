@@ -300,7 +300,7 @@ export function ManualExpenseForm({
         onSubmit(expenseRequest)
       },
       onError: (error) => {
-        setErrors({ general: (error as Error).message })
+        setErrors({ general: (error as Error)?.message || 'An error occurred' })
       },
     })
   }
@@ -325,7 +325,7 @@ export function ManualExpenseForm({
               <div className='flex items-center'>
                 <AlertCircle className='text-red-500 mr-2' size={16} />
                 <span className='text-red-700 text-sm'>
-                  {(error as any)?.message || 'An error occurred'}
+                  {(error as Error)?.message || 'An error occurred'}
                 </span>
               </div>
             </div>

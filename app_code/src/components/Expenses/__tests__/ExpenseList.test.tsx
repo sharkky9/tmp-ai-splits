@@ -1,6 +1,7 @@
 import React from 'react'
 import { render, screen } from '@testing-library/react'
 import { ExpenseList } from '../ExpenseList'
+import { formatCurrency } from '../../../lib/expenseUtils'
 
 // Mock dependencies
 const mockUseExpenses = jest.fn()
@@ -9,9 +10,18 @@ jest.mock('../../../hooks/useExpenses', () => ({
   useExpenses: (groupId: string) => mockUseExpenses(groupId),
 }))
 
+// Mock formatCurrency
+jest.mock('../../../lib/expenseUtils', () => ({
+  formatCurrency: jest.fn((amount: number) => `$${amount.toFixed(2)}`),
+}))
+
 // Mock ExpenseListItem component
 jest.mock('../ExpenseListItem', () => ({
-  ExpenseListItem: ({ expense }: { expense: any }) => (
+  ExpenseListItem: ({
+    expense,
+  }: {
+    expense: { id: string; description: string; total_amount: number }
+  }) => (
     <div data-testid={`expense-item-${expense.id}`}>
       {expense.description} - ${expense.total_amount}
     </div>
@@ -42,9 +52,51 @@ const mockExpenses = [
   },
 ]
 
+const mockGroupMembers = [
+  {
+    id: 'member1',
+    group_id: 'test-group',
+    user_id: 'user1',
+    placeholder_name: null,
+    email: null,
+    is_placeholder: false,
+    role: 'member',
+    joined_at: '2024-01-01T00:00:00Z',
+    created_at: '2024-01-01T00:00:00Z',
+    updated_at: '2024-01-01T00:00:00Z',
+    profiles: {
+      id: 'user1',
+      name: 'Alice',
+      email: 'alice@example.com',
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z',
+    },
+  },
+  {
+    id: 'member2',
+    group_id: 'test-group',
+    user_id: 'user2',
+    placeholder_name: null,
+    email: null,
+    is_placeholder: false,
+    role: 'member',
+    joined_at: '2024-01-01T00:00:00Z',
+    created_at: '2024-01-01T00:00:00Z',
+    updated_at: '2024-01-01T00:00:00Z',
+    profiles: {
+      id: 'user2',
+      name: 'Bob',
+      email: 'bob@example.com',
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z',
+    },
+  },
+]
+
 describe('ExpenseList', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    ;(formatCurrency as jest.Mock).mockImplementation((amount: number) => `$${amount.toFixed(2)}`)
   })
 
   describe('Loading State', () => {
@@ -112,7 +164,7 @@ describe('ExpenseList', () => {
     })
 
     it('should render list of expenses when data is available', () => {
-      render(<ExpenseList groupId='test-group-id' />)
+      render(<ExpenseList groupId='test-group-id' groupMembers={mockGroupMembers} />)
 
       expect(screen.getByText('Expenses')).toBeInTheDocument()
       expect(screen.getByTestId('expense-item-expense-1')).toBeInTheDocument()
@@ -120,14 +172,14 @@ describe('ExpenseList', () => {
     })
 
     it('should pass each expense to ExpenseListItem', () => {
-      render(<ExpenseList groupId='test-group-id' />)
+      render(<ExpenseList groupId='test-group-id' groupMembers={mockGroupMembers} />)
 
       expect(screen.getByText('Team dinner - $120.5')).toBeInTheDocument()
       expect(screen.getByText('Office supplies - $45')).toBeInTheDocument()
     })
 
     it('should call useExpenses hook with correct groupId', () => {
-      render(<ExpenseList groupId='test-group-id' />)
+      render(<ExpenseList groupId='test-group-id' groupMembers={mockGroupMembers} />)
 
       expect(mockUseExpenses).toHaveBeenCalledWith('test-group-id')
     })
@@ -141,10 +193,10 @@ describe('ExpenseList', () => {
         error: null,
       })
 
-      const { rerender } = render(<ExpenseList groupId='group-1' />)
+      const { rerender } = render(<ExpenseList groupId='group-1' groupMembers={mockGroupMembers} />)
       expect(mockUseExpenses).toHaveBeenCalledWith('group-1')
 
-      rerender(<ExpenseList groupId='group-2' />)
+      rerender(<ExpenseList groupId='group-2' groupMembers={mockGroupMembers} />)
       expect(mockUseExpenses).toHaveBeenCalledWith('group-2')
     })
   })

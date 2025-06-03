@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -412,11 +412,10 @@ export function NLLExpenseInput({
     setShowManualForm(true)
   }
 
-  const handleManualFormSuccess = (expense: any) => {
+  const handleManualFormSuccess = (expense: CreateExpenseRequest) => {
     setShowManualForm(false)
-    setManualFormInitialData(undefined)
-    reset()
-    onSuccess?.(expense)
+    // The mutation is handled by the form itself
+    onSuccess?.(expense as unknown as Expense)
   }
 
   const handleManualFormClose = () => {

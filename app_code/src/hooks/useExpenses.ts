@@ -122,7 +122,17 @@ export function useUpdateExpense() {
       updates: Partial<CreateExpenseRequest>
     }): Promise<Expense> => {
       // For updates, we'll need to handle expense_splits separately
-      const { expense_splits, participants, ...expenseUpdates } = updates as any
+      interface UpdatesWithParticipants extends Partial<CreateExpenseRequest> {
+        participants?: Array<{
+          member_id: string
+          user_id?: string
+          placeholder_name?: string
+          split_amount: number
+          split_percentage?: number
+        }>
+      }
+
+      const { participants, ...expenseUpdates } = updates as UpdatesWithParticipants
 
       // Update the main expense record
       const { data: expenseData, error: expenseError } = await supabase
@@ -149,7 +159,7 @@ export function useUpdateExpense() {
         }
 
         // Create new splits
-        const splitData = participants.map((participant: any) => ({
+        const splitData = participants.map((participant) => ({
           expense_id: expenseId,
           member_id: participant.member_id,
           user_id: participant.user_id,

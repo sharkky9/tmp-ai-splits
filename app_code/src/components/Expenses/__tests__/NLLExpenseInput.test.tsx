@@ -20,14 +20,25 @@ jest.mock('../../../lib/supabaseClient', () => ({
     },
   },
 }))
-jest.mock('../ManualExpenseForm', () => ({
-  ManualExpenseForm: ({ onClose, onSubmit }: any) => (
+jest.mock('../ManualExpenseForm', () => {
+  const MockManualExpenseForm = ({
+    onClose,
+    onSubmit,
+  }: {
+    onClose: () => void
+    onSubmit: (data: { id: string }) => void
+  }) => (
     <div data-testid='manual-expense-form'>
       <button onClick={onClose}>Close</button>
       <button onClick={() => onSubmit({ id: 'test-expense' })}>Submit</button>
     </div>
-  ),
-}))
+  )
+  MockManualExpenseForm.displayName = 'ManualExpenseForm'
+
+  return {
+    ManualExpenseForm: MockManualExpenseForm,
+  }
+})
 jest.mock('../../../lib/nlpUtils', () => ({
   parseExpenseText: jest.fn(),
   formatForExpenseCreation: jest.fn(),
@@ -110,9 +121,11 @@ const createWrapper = () => {
       mutations: { retry: false },
     },
   })
-  return ({ children }: { children: React.ReactNode }) => (
+  const Wrapper = ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   )
+  Wrapper.displayName = 'TestWrapper'
+  return Wrapper
 }
 
 describe('NLLExpenseInput', () => {

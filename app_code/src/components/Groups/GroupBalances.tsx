@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import {
   User,
   DollarSign,
@@ -33,7 +33,7 @@ export default function GroupBalances({ groupId }: GroupBalancesProps) {
   const [error, setError] = useState<string | null>(null)
   const supabase = createClientComponentClient()
 
-  const fetchBalances = async () => {
+  const fetchBalances = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -110,7 +110,7 @@ export default function GroupBalances({ groupId }: GroupBalancesProps) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [groupId, supabase])
 
   useEffect(() => {
     if (groupId) {

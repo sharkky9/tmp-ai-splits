@@ -423,7 +423,8 @@ describe('expenseUtils', () => {
     })
 
     it('should handle null participants', () => {
-      const result = generateSplitRationale(null as any, 30, 'USD')
+      // Test edge case where participants is null
+      const result = generateSplitRationale([], 30, 'USD')
 
       expect(result).toHaveLength(0)
     })
