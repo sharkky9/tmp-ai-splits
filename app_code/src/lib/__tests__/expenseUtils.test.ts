@@ -423,7 +423,7 @@ describe('expenseUtils', () => {
     })
 
     it('should handle null participants', () => {
-      const result = generateSplitRationale(null as unknown, 30, 'USD')
+      const result = generateSplitRationale(null as any, 30, 'USD')
 
       expect(result).toHaveLength(0)
     })
