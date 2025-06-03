@@ -156,8 +156,14 @@ export function AddMemberForm({ groupId, onSuccess, onCancel }: AddMemberFormPro
                   {...register('email')}
                   placeholder="Enter member's email"
                   disabled={isSubmitting}
+                  aria-invalid={!!errors.email}
+                  aria-describedby={errors.email ? 'email-error' : undefined}
                 />
-                {errors.email && <p className='text-sm text-red-600'>{errors.email.message}</p>}
+                {errors.email && (
+                  <p id='email-error' className='text-sm text-red-600'>
+                    {errors.email.message}
+                  </p>
+                )}
               </div>
               <p className='text-sm text-gray-500'>
                 The person will be invited to join the group when they sign up.
@@ -172,9 +178,13 @@ export function AddMemberForm({ groupId, onSuccess, onCancel }: AddMemberFormPro
                   {...register('placeholder_name')}
                   placeholder="Enter member's name"
                   disabled={isSubmitting}
+                  aria-invalid={!!errors.placeholder_name}
+                  aria-describedby={errors.placeholder_name ? 'placeholder-name-error' : undefined}
                 />
                 {errors.placeholder_name && (
-                  <p className='text-sm text-red-600'>{errors.placeholder_name.message}</p>
+                  <p id='placeholder-name-error' className='text-sm text-red-600'>
+                    {errors.placeholder_name.message}
+                  </p>
                 )}
               </div>
               <div className='space-y-2'>
@@ -194,7 +204,10 @@ export function AddMemberForm({ groupId, onSuccess, onCancel }: AddMemberFormPro
             </TabsContent>
 
             {addMemberMutation.error && (
-              <div className='p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded'>
+              <div
+                role='alert'
+                className='p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded'
+              >
                 Failed to add member: {addMemberMutation.error.message}
               </div>
             )}

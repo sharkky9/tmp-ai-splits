@@ -188,3 +188,62 @@ export function formatCurrency(amount: number, currency: string = 'USD'): string
     return `$${amount.toFixed(2)}`
   }
 }
+
+/**
+ * Generate split rationale explanation for each participant
+ */
+export function generateSplitRationale(
+  participants: Array<{
+    user_id?: string
+    placeholder_name?: string
+    amount: number
+    percentage?: number
+  }>,
+  totalAmount: number,
+  currency: string = 'USD'
+): Array<{ participantKey: string; name: string; amount: number; rationale: string }> {
+  if (!participants || participants.length === 0) {
+    return []
+  }
+
+  const explanations = participants.map((participant) => {
+    const participantKey = participant.user_id || participant.placeholder_name || 'Unknown'
+    const name = participant.placeholder_name || participantKey
+    const amount = participant.amount
+
+    let rationale: string
+
+    // Determine the type of split based on the data
+    if (participant.percentage !== undefined) {
+      // Percentage-based split
+      rationale = `${participant.percentage}% of ${formatCurrency(totalAmount, currency)} total`
+    } else {
+      // Check if it's an equal split by comparing amounts
+      const expectedEqualSplit = Number((totalAmount / participants.length).toFixed(2))
+
+      // Check if ALL participants have approximately equal amounts
+      // Use a slightly larger tolerance to handle floating point precision
+      const allParticipantsEqual = participants.every(
+        (p) => Math.abs(p.amount - expectedEqualSplit) < 0.02
+      )
+
+      if (allParticipantsEqual) {
+        // Equal split
+        rationale = `Split equally among ${participants.length} ${participants.length === 1 ? 'person' : 'people'}`
+      } else {
+        // Custom amount split
+        const percentage = ((amount / totalAmount) * 100).toFixed(1)
+        rationale = `Custom amount (${percentage}% of total)`
+      }
+    }
+
+    return {
+      participantKey,
+      name,
+      amount,
+      rationale,
+    }
+  })
+
+  return explanations
+}

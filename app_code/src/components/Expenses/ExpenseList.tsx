@@ -46,7 +46,7 @@ export function ExpenseList({
 
   if (error) {
     return (
-      <div className='p-4 text-red-500'>
+      <div role='alert' className='p-4 text-red-500'>
         <p>Error loading expenses: {error.message}</p>
       </div>
     )

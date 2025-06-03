@@ -158,9 +158,9 @@ describe('GroupBalances', () => {
     })
 
     await waitFor(() => {
-      expect(screen.getByText('Alice Smith')).toBeInTheDocument()
-      expect(screen.getByText('Bob Johnson')).toBeInTheDocument()
-      expect(screen.getByText('Charlie Wilson')).toBeInTheDocument()
+      expect(screen.getAllByText('Alice Smith').length).toBeGreaterThan(0)
+      expect(screen.getAllByText('Bob Johnson').length).toBeGreaterThan(0)
+      expect(screen.getAllByText('Charlie Wilson').length).toBeGreaterThan(0)
     })
 
     // Check balance displays - use more specific queries to avoid conflicts with legend
@@ -180,6 +180,7 @@ describe('GroupBalances', () => {
   })
 
   it('should display empty state when no balances', async () => {
+    // Mock group members query returning empty array
     const emptyMembersMock = {
       select: jest.fn().mockReturnValue({
         eq: jest.fn().mockResolvedValue({
@@ -189,7 +190,19 @@ describe('GroupBalances', () => {
       }),
     }
 
-    mockSupabase.from.mockReturnValue(emptyMembersMock)
+    // Mock expenses query
+    const emptyExpensesMock = {
+      select: jest.fn().mockReturnValue({
+        eq: jest.fn().mockReturnValue({
+          eq: jest.fn().mockResolvedValue({
+            data: [],
+            error: null,
+          }),
+        }),
+      }),
+    }
+
+    mockSupabase.from.mockReturnValueOnce(emptyMembersMock).mockReturnValueOnce(emptyExpensesMock)
 
     await act(async () => {
       renderComponent()
@@ -232,7 +245,7 @@ describe('GroupBalances', () => {
     })
 
     await waitFor(() => {
-      expect(screen.getByText('Alice Smith')).toBeInTheDocument()
+      expect(screen.getAllByText('Alice Smith').length).toBeGreaterThan(0)
     })
 
     // Setup mocks for refresh call
@@ -280,9 +293,9 @@ describe('GroupBalances', () => {
     })
 
     await waitFor(() => {
-      expect(screen.getByText('Alice Smith')).toBeInTheDocument()
-      expect(screen.getByText('Bob Johnson')).toBeInTheDocument()
-      expect(screen.getByText('Charlie Wilson')).toBeInTheDocument()
+      expect(screen.getAllByText('Alice Smith').length).toBeGreaterThan(0)
+      expect(screen.getAllByText('Bob Johnson').length).toBeGreaterThan(0)
+      expect(screen.getAllByText('Charlie Wilson').length).toBeGreaterThan(0)
     })
 
     // All balances should be settled (since no expenses)
@@ -298,7 +311,7 @@ describe('GroupBalances', () => {
     })
 
     await waitFor(() => {
-      expect(screen.getByText('Alice Smith')).toBeInTheDocument()
+      expect(screen.getAllByText('Alice Smith').length).toBeGreaterThan(0)
     })
 
     // Check for balance breakdown information
@@ -315,10 +328,84 @@ describe('GroupBalances', () => {
     })
 
     await waitFor(() => {
-      expect(screen.getByText('Charlie Wilson')).toBeInTheDocument()
+      expect(screen.getAllByText('Charlie Wilson').length).toBeGreaterThan(0)
     })
 
     // Check that placeholder member has Guest badge
     expect(screen.getByText('Guest')).toBeInTheDocument()
+  })
+
+  it('should display settlement suggestions when there are debts to settle', async () => {
+    setupSuccessfulMocks()
+
+    await act(async () => {
+      renderComponent()
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText('Settlement Suggestions')).toBeInTheDocument()
+    })
+
+    // Check for specific settlement transaction (Charlie owes Bob $20)
+    expect(
+      screen.getByText('These 1 transactions will settle all debts in the group.')
+    ).toBeInTheDocument()
+  })
+
+  it('should not display settlement suggestions when all balances are settled', async () => {
+    // Mock group members query with all settled balances
+    const settledMembersMock = {
+      select: jest.fn().mockReturnValue({
+        eq: jest.fn().mockResolvedValue({
+          data: mockGroupMembers,
+          error: null,
+        }),
+      }),
+    }
+
+    // Mock empty expenses (which results in all $0 balances)
+    const emptyExpensesMock = {
+      select: jest.fn().mockReturnValue({
+        eq: jest.fn().mockReturnValue({
+          eq: jest.fn().mockResolvedValue({
+            data: [],
+            error: null,
+          }),
+        }),
+      }),
+    }
+
+    mockSupabase.from.mockReturnValueOnce(settledMembersMock).mockReturnValueOnce(emptyExpensesMock)
+
+    await act(async () => {
+      renderComponent()
+    })
+
+    await waitFor(() => {
+      expect(screen.getAllByText('Alice Smith').length).toBeGreaterThan(0)
+    })
+
+    // Settlement suggestions should not be shown when no debts exist
+    expect(screen.queryByText('Settlement Suggestions')).not.toBeInTheDocument()
+  })
+
+  it('should display correct settlement transaction details', async () => {
+    setupSuccessfulMocks()
+
+    await act(async () => {
+      renderComponent()
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText('Settlement Suggestions')).toBeInTheDocument()
+    })
+
+    // The settlement should show Charlie paying Bob (Charlie owes $20, Bob gets $20)
+    // Look for both names in settlement suggestions section
+    const settlementSuggestions = screen.getByText('Settlement Suggestions').closest('div')
+    expect(settlementSuggestions).toBeInTheDocument()
+
+    // Check that the settlement amount is displayed
+    expect(screen.getByText('$20.00')).toBeInTheDocument()
   })
 })

@@ -10,6 +10,7 @@ import {
   CreditCard,
   Calendar,
   DollarSign,
+  Info,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -18,6 +19,7 @@ import { Separator } from '@/components/ui/separator'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { formatCurrency } from '@/lib/utils/currency'
 import { formatDateForDisplay, formatDistanceToNowSafe } from '@/lib/utils/dateUtils'
+import { generateSplitRationale } from '@/lib/expenseUtils'
 import type { Expense, GroupMemberWithProfile } from '@/types/database'
 
 interface ExpenseListItemProps {
@@ -124,7 +126,13 @@ export function ExpenseListItem({
 
               {showActions && (
                 <div className='flex items-center gap-2' onClick={(e) => e.stopPropagation()}>
-                  <Button variant='outline' size='sm' onClick={handleEdit} disabled={isLoading}>
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    onClick={handleEdit}
+                    disabled={isLoading}
+                    aria-label='Edit expense'
+                  >
                     <Edit className='w-4 h-4' />
                   </Button>
                   <Button
@@ -133,6 +141,7 @@ export function ExpenseListItem({
                     onClick={handleDelete}
                     disabled={isLoading}
                     className='text-red-600 hover:text-red-700 hover:bg-red-50'
+                    aria-label='Delete expense'
                   >
                     <Trash2 className='w-4 h-4' />
                   </Button>
@@ -196,6 +205,43 @@ export function ExpenseListItem({
                       </div>
                     ))}
                   </div>
+                </div>
+              </div>
+
+              {/* Split Rationale */}
+              <div className='space-y-2'>
+                <h4 className='font-medium text-sm text-gray-700 flex items-center gap-2'>
+                  <Info className='w-4 h-4' />
+                  Split Explanation
+                </h4>
+                <div className='space-y-1'>
+                  {generateSplitRationale(
+                    expense.participants,
+                    expense.total_amount,
+                    expense.currency
+                  ).map((explanation, index) => (
+                    <div
+                      key={index}
+                      className='flex justify-between items-center p-2 bg-blue-50 rounded text-sm'
+                    >
+                      <span className='font-medium'>
+                        {getMemberName(
+                          explanation.participantKey.startsWith('user')
+                            ? explanation.participantKey
+                            : undefined,
+                          explanation.participantKey.startsWith('user')
+                            ? undefined
+                            : explanation.participantKey
+                        )}
+                      </span>
+                      <div className='text-right'>
+                        <div className='text-blue-700 font-semibold'>
+                          {formatCurrency(explanation.amount, expense.currency)}
+                        </div>
+                        <div className='text-xs text-gray-600'>{explanation.rationale}</div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
 

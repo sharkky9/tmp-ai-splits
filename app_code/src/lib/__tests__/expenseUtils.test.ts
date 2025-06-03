@@ -5,6 +5,7 @@ import {
   calculateMemberBalances,
   simplifyDebts,
   formatCurrency,
+  generateSplitRationale,
 } from '../expenseUtils'
 import { MemberBalance, SimplifiedDebt } from '../../types/database'
 
@@ -335,6 +336,126 @@ describe('expenseUtils', () => {
     it('should default to USD if no currency provided', () => {
       const result = formatCurrency(10.5)
       expect(result).toBe('$10.50')
+    })
+  })
+
+  describe('generateSplitRationale', () => {
+    it('should generate rationale for equal splits', () => {
+      const participants = [
+        { user_id: 'user1', amount: 10 },
+        { user_id: 'user2', amount: 10 },
+        { user_id: 'user3', amount: 10 },
+      ]
+
+      const result = generateSplitRationale(participants, 30, 'USD')
+
+      expect(result).toHaveLength(3)
+      expect(result[0].rationale).toBe('Split equally among 3 people')
+      expect(result[1].rationale).toBe('Split equally among 3 people')
+      expect(result[2].rationale).toBe('Split equally among 3 people')
+    })
+
+    it('should generate rationale for percentage splits', () => {
+      const participants = [
+        { user_id: 'user1', amount: 12, percentage: 40 },
+        { user_id: 'user2', amount: 18, percentage: 60 },
+      ]
+
+      const result = generateSplitRationale(participants, 30, 'USD')
+
+      expect(result).toHaveLength(2)
+      expect(result[0].rationale).toBe('40% of $30.00 total')
+      expect(result[1].rationale).toBe('60% of $30.00 total')
+    })
+
+    it('should generate rationale for custom amount splits', () => {
+      const participants = [
+        { user_id: 'user1', amount: 15 },
+        { user_id: 'user2', amount: 15 },
+      ]
+
+      const result = generateSplitRationale(participants, 30, 'USD')
+
+      expect(result).toHaveLength(2)
+      expect(result[0].rationale).toBe('Split equally among 2 people')
+      expect(result[1].rationale).toBe('Split equally among 2 people')
+    })
+
+    it('should generate rationale for unequal custom amounts', () => {
+      const participants = [
+        { user_id: 'user1', amount: 20 },
+        { user_id: 'user2', amount: 10 },
+      ]
+
+      const result = generateSplitRationale(participants, 30, 'USD')
+
+      expect(result).toHaveLength(2)
+      expect(result[0].rationale).toBe('Custom amount (66.7% of total)')
+      expect(result[1].rationale).toBe('Custom amount (33.3% of total)')
+    })
+
+    it('should handle placeholder names', () => {
+      const participants = [
+        { user_id: 'user1', amount: 15 },
+        { placeholder_name: 'Guest User', amount: 15 },
+      ]
+
+      const result = generateSplitRationale(participants, 30, 'USD')
+
+      expect(result).toHaveLength(2)
+      expect(result[0].participantKey).toBe('user1')
+      expect(result[0].name).toBe('user1')
+      expect(result[1].participantKey).toBe('Guest User')
+      expect(result[1].name).toBe('Guest User')
+    })
+
+    it('should handle single participant', () => {
+      const participants = [{ user_id: 'user1', amount: 30 }]
+
+      const result = generateSplitRationale(participants, 30, 'USD')
+
+      expect(result).toHaveLength(1)
+      expect(result[0].rationale).toBe('Split equally among 1 person')
+    })
+
+    it('should handle empty participants array', () => {
+      const result = generateSplitRationale([], 30, 'USD')
+
+      expect(result).toHaveLength(0)
+    })
+
+    it('should handle null participants', () => {
+      const result = generateSplitRationale(null as any, 30, 'USD')
+
+      expect(result).toHaveLength(0)
+    })
+
+    it('should use correct currency formatting', () => {
+      const participants = [
+        { user_id: 'user1', amount: 500, percentage: 50 },
+        { user_id: 'user2', amount: 500, percentage: 50 },
+      ]
+
+      const result = generateSplitRationale(participants, 1000, 'USD')
+
+      expect(result[0].rationale).toBe('50% of $1,000.00 total')
+      expect(result[1].rationale).toBe('50% of $1,000.00 total')
+    })
+
+    it('should handle floating point precision in equal split detection', () => {
+      const participants = [
+        { user_id: 'user1', amount: 33.33 },
+        { user_id: 'user2', amount: 33.33 },
+        { user_id: 'user3', amount: 33.34 },
+      ]
+
+      const result = generateSplitRationale(participants, 100, 'USD')
+
+      expect(result).toHaveLength(3)
+      // Should recognize this as equal split despite floating point differences
+      expect(result[0].rationale).toBe('Split equally among 3 people')
+      expect(result[1].rationale).toBe('Split equally among 3 people')
+      expect(result[2].rationale).toBe('Split equally among 3 people')
     })
   })
 })

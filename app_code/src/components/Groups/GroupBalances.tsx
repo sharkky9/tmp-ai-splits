@@ -1,7 +1,15 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { User, DollarSign, TrendingUp, TrendingDown, Minus, RefreshCw } from 'lucide-react'
+import {
+  User,
+  DollarSign,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  RefreshCw,
+  ArrowRight,
+} from 'lucide-react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import {
   calculateGroupBalances,
@@ -12,6 +20,8 @@ import {
   Expense,
   ExpenseSplit,
 } from '@/lib/balanceUtils'
+import { simplifyDebts, formatCurrency } from '@/lib/expenseUtils'
+import type { MemberBalance } from '@/types/database'
 
 interface GroupBalancesProps {
   groupId: string
@@ -267,6 +277,58 @@ export default function GroupBalances({ groupId }: GroupBalancesProps) {
           </div>
         </div>
       )}
+
+      {/* Settlement Suggestions */}
+      {balances.length > 0 &&
+        (() => {
+          // Convert GroupMemberBalance to MemberBalance format for simplifyDebts
+          const memberBalances: MemberBalance[] = balances.map((balance) => ({
+            member_id: balance.member_id,
+            user_id: balance.user_id,
+            name: balance.name,
+            total_paid: balance.total_paid,
+            total_owed: balance.total_share,
+            net_balance: balance.net_balance,
+          }))
+
+          const settlements = simplifyDebts(memberBalances)
+
+          // Only show settlement suggestions if there are actual debts to settle
+          if (settlements.length === 0) {
+            return null
+          }
+
+          return (
+            <div className='mt-6 pt-4 border-t border-gray-200'>
+              <h4 className='font-medium text-sm text-gray-700 mb-3 flex items-center gap-2'>
+                <ArrowRight className='w-4 h-4' />
+                Settlement Suggestions
+              </h4>
+              <div className='space-y-2'>
+                {settlements.map((settlement, index) => (
+                  <div
+                    key={index}
+                    className='flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg'
+                  >
+                    <div className='flex items-center gap-3'>
+                      <div className='text-sm font-medium text-gray-900'>
+                        {settlement.from_name}
+                      </div>
+                      <ArrowRight className='w-4 h-4 text-blue-500' />
+                      <div className='text-sm font-medium text-gray-900'>{settlement.to_name}</div>
+                    </div>
+                    <div className='text-blue-700 font-semibold'>
+                      {formatCurrency(settlement.amount)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className='mt-3 text-xs text-gray-500'>
+                These {settlements.length} transactions will settle all debts in the group.
+              </div>
+            </div>
+          )
+        })()}
     </div>
   )
 }

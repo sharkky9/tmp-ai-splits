@@ -42,6 +42,8 @@ interface FormErrors {
   total_amount?: string
   currency?: string
   date_of_expense?: string
+  category?: string
+  tags?: string
   payer_id?: string
   participants?: string
   custom_amounts?: string
@@ -352,9 +354,14 @@ export function ManualExpenseForm({
                     errors.description ? 'border-red-300' : 'border-gray-300'
                   }`}
                   placeholder='What was this expense for?'
+                  aria-invalid={!!errors.description}
+                  aria-describedby={errors.description ? 'description-error' : undefined}
+                  aria-required='true'
                 />
                 {errors.description && (
-                  <p className='mt-1 text-sm text-red-600'>{errors.description}</p>
+                  <p id='description-error' className='mt-1 text-sm text-red-600'>
+                    {errors.description}
+                  </p>
                 )}
               </div>
 
@@ -381,10 +388,15 @@ export function ManualExpenseForm({
                         errors.total_amount ? 'border-red-300' : 'border-gray-300'
                       }`}
                       placeholder='0.00'
+                      aria-invalid={!!errors.total_amount}
+                      aria-describedby={errors.total_amount ? 'amount-error' : undefined}
+                      aria-required='true'
                     />
                   </div>
                   {errors.total_amount && (
-                    <p className='mt-1 text-sm text-red-600'>{errors.total_amount}</p>
+                    <p id='amount-error' className='mt-1 text-sm text-red-600'>
+                      {errors.total_amount}
+                    </p>
                   )}
                 </div>
 
@@ -403,6 +415,9 @@ export function ManualExpenseForm({
                       value={formData.date_of_expense}
                       onChange={(e) => updateField('date_of_expense', e.target.value)}
                       className='w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                      aria-invalid={!!errors.date_of_expense}
+                      aria-describedby={errors.date_of_expense ? 'date-error' : undefined}
+                      aria-required='true'
                     />
                   </div>
                 </div>
@@ -418,6 +433,9 @@ export function ManualExpenseForm({
                   value={formData.category}
                   onChange={(e) => updateField('category', e.target.value)}
                   className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                  aria-invalid={!!errors.category}
+                  aria-describedby={errors.category ? 'category-error' : undefined}
+                  aria-required='true'
                 >
                   <option value=''>Select a category</option>
                   {EXPENSE_CATEGORIES.map((category) => (
@@ -459,6 +477,9 @@ export function ManualExpenseForm({
                       className='flex-1 px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500'
                       placeholder='Add a tag'
                       autoFocus
+                      aria-invalid={!!errors.tags}
+                      aria-describedby={errors.tags ? 'tags-error' : undefined}
+                      aria-required='true'
                     />
                     <button
                       type='button'
@@ -513,6 +534,9 @@ export function ManualExpenseForm({
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                     errors.payer_id ? 'border-red-300' : 'border-gray-300'
                   }`}
+                  aria-invalid={!!errors.payer_id}
+                  aria-describedby={errors.payer_id ? 'payer-error' : undefined}
+                  aria-required='true'
                 >
                   <option value=''>Select who paid</option>
                   {groupMembers.map((member) => (
@@ -521,7 +545,11 @@ export function ManualExpenseForm({
                     </option>
                   ))}
                 </select>
-                {errors.payer_id && <p className='mt-1 text-sm text-red-600'>{errors.payer_id}</p>}
+                {errors.payer_id && (
+                  <p id='payer-error' className='mt-1 text-sm text-red-600'>
+                    {errors.payer_id}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -635,16 +663,21 @@ export function ManualExpenseForm({
                                 size={14}
                               />
                               <input
+                                id={`custom-amount-${member.id}`}
                                 type='number'
                                 step='0.01'
                                 min='0'
                                 value={formData.custom_amounts[member.id] || ''}
-                                onChange={(e) =>
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                                   updateCustomValue(member.id, e.target.value, 'amount')
                                 }
                                 className='w-24 pl-6 pr-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500'
                                 placeholder='0.00'
                                 aria-label={`${member.name} amount`}
+                                aria-invalid={!!errors.custom_amounts}
+                                aria-describedby={
+                                  errors.custom_amounts ? 'custom-amounts-error' : undefined
+                                }
                               />
                             </div>
                           </div>
@@ -654,17 +687,22 @@ export function ManualExpenseForm({
                           <div className='ml-4'>
                             <div className='relative'>
                               <input
+                                id={`custom-percentage-${member.id}`}
                                 type='number'
                                 step='0.1'
                                 min='0'
                                 max='100'
                                 value={formData.custom_percentages[member.id] || ''}
-                                onChange={(e) =>
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                                   updateCustomValue(member.id, e.target.value, 'percentage')
                                 }
                                 className='w-20 pr-6 pl-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500'
                                 placeholder='0'
                                 aria-label={`${member.name} percentage`}
+                                aria-invalid={!!errors.custom_percentages}
+                                aria-describedby={
+                                  errors.custom_percentages ? 'custom-percentages-error' : undefined
+                                }
                               />
                               <span className='absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm'>
                                 %
@@ -683,6 +721,18 @@ export function ManualExpenseForm({
                   )
                 })}
               </div>
+
+              {/* Error messages for custom splits - displayed once per section */}
+              {errors.custom_amounts && (
+                <p id='custom-amounts-error' className='mt-1 text-sm text-red-600'>
+                  {errors.custom_amounts}
+                </p>
+              )}
+              {errors.custom_percentages && (
+                <p id='custom-percentages-error' className='mt-1 text-sm text-red-600'>
+                  {errors.custom_percentages}
+                </p>
+              )}
 
               {/* Split validation summary */}
               {formData.split_method === 'amount' && formData.participants.length > 0 && (
@@ -706,9 +756,6 @@ export function ManualExpenseForm({
                       {formatCurrency(customTotals.amounts)}
                     </span>
                   </div>
-                  {errors.custom_amounts && (
-                    <p className='mt-1 text-sm text-red-600'>{errors.custom_amounts}</p>
-                  )}
                 </div>
               )}
 
@@ -726,9 +773,6 @@ export function ManualExpenseForm({
                       {customTotals.percentages.toFixed(1)}%
                     </span>
                   </div>
-                  {errors.custom_percentages && (
-                    <p className='mt-1 text-sm text-red-600'>{errors.custom_percentages}</p>
-                  )}
                 </div>
               )}
             </div>

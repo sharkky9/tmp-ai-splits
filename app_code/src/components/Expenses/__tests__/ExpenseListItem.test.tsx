@@ -13,6 +13,24 @@ jest.mock('../../../lib/utils/dateUtils', () => ({
   formatDistanceToNowSafe: (date: string) => '2 days ago',
 }))
 
+jest.mock('../../../lib/expenseUtils', () => ({
+  generateSplitRationale: jest.fn((participants, totalAmount, currency) => {
+    return participants.map((p: any, index: number) => ({
+      participantKey: p.user_id || p.placeholder_name || 'Unknown',
+      name: p.placeholder_name || p.user_id || 'Unknown',
+      amount: p.amount,
+      rationale: p.percentage
+        ? `${p.percentage}% of $${totalAmount.toFixed(2)} total`
+        : participants.length > 1 &&
+            participants.every(
+              (part: any) => Math.abs(part.amount - totalAmount / participants.length) < 0.02
+            )
+          ? `Split equally among ${participants.length} ${participants.length === 1 ? 'person' : 'people'}`
+          : `Custom amount (${((p.amount / totalAmount) * 100).toFixed(1)}% of total)`,
+    }))
+  }),
+}))
+
 // Simplified mocks for UI components
 jest.mock('lucide-react', () => ({
   ChevronDown: () => <div data-testid='chevron-down' />,
@@ -23,6 +41,7 @@ jest.mock('lucide-react', () => ({
   CreditCard: () => <div data-testid='credit-card-icon' />,
   Calendar: () => <div data-testid='calendar-icon' />,
   DollarSign: () => <div data-testid='dollar-sign-icon' />,
+  Info: () => <div data-testid='info-icon' />,
 }))
 
 // Apply mocks using relative paths
@@ -351,6 +370,94 @@ describe('ExpenseListItem', () => {
 
       // Should render without errors, showing "Unknown User" or similar
       expect(screen.getByText('Team dinner')).toBeInTheDocument()
+    })
+  })
+
+  describe('Split Rationale', () => {
+    it('should display split explanation section', () => {
+      render(<ExpenseListItem {...defaultProps} />)
+
+      expect(screen.getByText('Split Explanation')).toBeInTheDocument()
+    })
+
+    it('should show equal split rationale for equal splits', () => {
+      const equalSplitExpense = {
+        ...mockExpense,
+        total_amount: 30,
+        participants: [
+          { user_id: 'user-1', amount: 15 },
+          { user_id: 'user-2', amount: 15 },
+        ],
+      }
+
+      render(<ExpenseListItem {...defaultProps} expense={equalSplitExpense} />)
+
+      expect(screen.getAllByText('Split equally among 2 people')).toHaveLength(2)
+    })
+
+    it('should show percentage rationale for percentage splits', () => {
+      const percentageSplitExpense = {
+        ...mockExpense,
+        total_amount: 100,
+        participants: [
+          { user_id: 'user-1', amount: 40, percentage: 40 },
+          { user_id: 'user-2', amount: 60, percentage: 60 },
+        ],
+      }
+
+      render(<ExpenseListItem {...defaultProps} expense={percentageSplitExpense} />)
+
+      expect(screen.getByText('40% of $100.00 total')).toBeInTheDocument()
+      expect(screen.getByText('60% of $100.00 total')).toBeInTheDocument()
+    })
+
+    it('should show custom amount rationale for unequal splits', () => {
+      const customSplitExpense = {
+        ...mockExpense,
+        total_amount: 100,
+        participants: [
+          { user_id: 'user-1', amount: 70 },
+          { user_id: 'user-2', amount: 30 },
+        ],
+      }
+
+      render(<ExpenseListItem {...defaultProps} expense={customSplitExpense} />)
+
+      expect(screen.getByText('Custom amount (70.0% of total)')).toBeInTheDocument()
+      expect(screen.getByText('Custom amount (30.0% of total)')).toBeInTheDocument()
+    })
+
+    it('should handle placeholder members in split rationale', () => {
+      const expenseWithPlaceholder = {
+        ...mockExpense,
+        total_amount: 60,
+        participants: [
+          { user_id: 'user-1', amount: 30 },
+          { placeholder_name: 'Guest User', amount: 30 },
+        ],
+      }
+
+      render(<ExpenseListItem {...defaultProps} expense={expenseWithPlaceholder} />)
+
+      expect(screen.getAllByText('Split equally among 2 people')).toHaveLength(2)
+      // Should display both user and placeholder name - using getAllByText since names appear multiple times
+      expect(screen.getAllByText('John Smith').length).toBeGreaterThan(0)
+      expect(screen.getAllByText('Guest User').length).toBeGreaterThan(0)
+    })
+
+    it('should display amounts correctly in split rationale', () => {
+      const testExpense = {
+        ...mockExpense,
+        total_amount: 45.5,
+        participants: [
+          { user_id: 'user-1', amount: 22.75 },
+          { user_id: 'user-2', amount: 22.75 },
+        ],
+      }
+
+      render(<ExpenseListItem {...defaultProps} expense={testExpense} />)
+
+      expect(screen.getAllByText('$22.75')).toHaveLength(4) // 2 in participants section + 2 in rationale section
     })
   })
 })
