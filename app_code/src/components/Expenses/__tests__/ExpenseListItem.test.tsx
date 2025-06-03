@@ -1,34 +1,40 @@
 import React from 'react'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ExpenseListItem } from '../ExpenseListItem'
+import type { Expense, GroupMemberWithProfile } from '../../../types/database'
+import { formatCurrency } from '../../../lib/utils/currency'
+import { formatDateForDisplay } from '../../../lib/utils/dateUtils'
 
-// Mock the utility imports using relative paths based on actual project structure
+// Mock the external utilities
 jest.mock('../../../lib/utils/currency', () => ({
-  formatCurrency: (amount: number, currency?: string) => `$${amount.toFixed(2)}`,
+  formatCurrency: jest.fn((amount: number, currency = 'USD') => `$${amount.toFixed(2)}`),
 }))
 
 jest.mock('../../../lib/utils/dateUtils', () => ({
-  formatDateForDisplay: (date: string) => new Date(date).toLocaleDateString(),
-  formatDistanceToNowSafe: (date: string) => '2 days ago',
+  formatDateForDisplay: jest.fn(() => 'Jan 15, 2023'),
+  formatDistanceToNowSafe: jest.fn(() => '2 days ago'),
 }))
 
-jest.mock('../../../lib/expenseUtils', () => ({
-  generateSplitRationale: jest.fn((participants, totalAmount, currency) => {
-    return participants.map((p: any, index: number) => ({
-      participantKey: p.user_id || p.placeholder_name || 'Unknown',
-      name: p.placeholder_name || p.user_id || 'Unknown',
-      amount: p.amount,
-      rationale: p.percentage
-        ? `${p.percentage}% of $${totalAmount.toFixed(2)} total`
-        : participants.length > 1 &&
-            participants.every(
-              (part: any) => Math.abs(part.amount - totalAmount / participants.length) < 0.02
-            )
-          ? `Split equally among ${participants.length} ${participants.length === 1 ? 'person' : 'people'}`
-          : `Custom amount (${((p.amount / totalAmount) * 100).toFixed(1)}% of total)`,
-    }))
-  }),
+// Create mock components for Collapsible before the jest.mock call
+const MockCollapsible = ({ children, open }: { children: React.ReactNode; open: boolean }) => (
+  <div data-testid='collapsible' data-open={open}>
+    {children}
+  </div>
+)
+
+const MockCollapsibleTrigger = ({ children }: { children: React.ReactNode }) => (
+  <div data-testid='collapsible-trigger'>{children}</div>
+)
+
+const MockCollapsibleContent = ({ children }: { children: React.ReactNode }) => (
+  <div data-testid='collapsible-content'>{children}</div>
+)
+
+jest.mock('../../../components/ui/collapsible', () => ({
+  Collapsible: MockCollapsible,
+  CollapsibleTrigger: MockCollapsibleTrigger,
+  CollapsibleContent: MockCollapsibleContent,
 }))
 
 // Simplified mocks for UI components
@@ -67,84 +73,98 @@ jest.mock('../../ui/separator', () => ({
   Separator: () => <hr data-testid='separator' />,
 }))
 
-jest.mock('../../ui/collapsible', () => ({
-  Collapsible: ({ children, open, onOpenChange }: any) => (
-    <div data-testid='collapsible' data-open={open}>
-      {children}
-    </div>
-  ),
-  CollapsibleContent: ({ children }: any) => (
-    <div data-testid='collapsible-content'>{children}</div>
-  ),
-  CollapsibleTrigger: ({ children, asChild }: any) => (
-    <div data-testid='collapsible-trigger'>{children}</div>
-  ),
-}))
-
-const mockExpense = {
+const mockExpense: Expense = {
   id: 'expense-1',
-  description: 'Team dinner',
-  total_amount: 120.5,
+  group_id: 'group-1',
+  description: 'Team Lunch',
+  total_amount: 60.0,
   currency: 'USD',
-  date_of_expense: '2024-01-15',
+  date_of_expense: '2023-01-15',
   status: 'confirmed',
-  created_at: '2024-01-15T18:00:00Z',
-  llm_confidence_score: 0.85,
+  created_at: '2023-01-15T12:00:00Z',
+  updated_at: '2023-01-15T12:00:00Z',
+  created_by: 'user-1',
   payers: [
     {
       user_id: 'user-1',
       placeholder_name: undefined,
-      amount: 120.5,
+      amount: 60.0,
     },
   ],
   participants: [
     {
       user_id: 'user-1',
       placeholder_name: undefined,
-      amount: 60.25,
-      percentage: undefined,
+      amount: 20.0,
+      percentage: 33.33,
     },
     {
       user_id: 'user-2',
       placeholder_name: undefined,
-      amount: 60.25,
-      percentage: undefined,
+      amount: 20.0,
+      percentage: 33.33,
+    },
+    {
+      user_id: undefined,
+      placeholder_name: 'John Smith',
+      amount: 20.0,
+      percentage: 33.34,
     },
   ],
   items: [
     {
       id: 'item-1',
-      description: 'Main course',
-      amount: 80.0,
-      participants: [
-        { user_id: 'user-1', placeholder_name: undefined },
-        { user_id: 'user-2', placeholder_name: undefined },
-      ],
+      description: 'Pizza',
+      amount: 35.0,
+      participants: [],
     },
     {
       id: 'item-2',
       description: 'Drinks',
-      amount: 40.5,
-      participants: [{ user_id: 'user-1', placeholder_name: undefined }],
+      amount: 25.0,
+      participants: [],
     },
   ],
+  llm_confidence_score: 0.95,
 }
 
-const mockGroupMembers = [
+const mockGroupMembers: GroupMemberWithProfile[] = [
   {
     id: 'member-1',
+    group_id: 'group-1',
     user_id: 'user-1',
+    placeholder_name: null,
+    is_placeholder: false,
+    role: 'member',
+    email: null,
+    joined_at: '2023-01-01T00:00:00Z',
+    created_at: '2023-01-01T00:00:00Z',
+    updated_at: '2023-01-01T00:00:00Z',
     profiles: {
-      name: 'John Smith',
-      email: 'john@example.com',
+      id: 'user-1',
+      name: 'Alice Johnson',
+      email: 'alice@example.com',
+      created_at: '2023-01-01T00:00:00Z',
+      updated_at: '2023-01-01T00:00:00Z',
     },
   },
   {
     id: 'member-2',
+    group_id: 'group-1',
     user_id: 'user-2',
+    placeholder_name: null,
+    is_placeholder: false,
+    role: 'member',
+    email: null,
+    joined_at: '2023-01-01T00:00:00Z',
+    created_at: '2023-01-01T00:00:00Z',
+    updated_at: '2023-01-01T00:00:00Z',
     profiles: {
-      name: 'Jane Doe',
-      email: 'jane@example.com',
+      id: 'user-2',
+      name: 'Bob Wilson',
+      email: 'bob@example.com',
+      created_at: '2023-01-01T00:00:00Z',
+      updated_at: '2023-01-01T00:00:00Z',
     },
   },
 ]
@@ -159,8 +179,8 @@ describe('ExpenseListItem', () => {
     it('should render expense basic information', () => {
       render(<ExpenseListItem {...defaultProps} />)
 
-      expect(screen.getByText('Team dinner')).toBeInTheDocument()
-      expect(screen.getAllByText('$120.50')).toHaveLength(2) // Summary and payer amount
+      expect(screen.getByText('Team Lunch')).toBeInTheDocument()
+      expect(screen.getAllByText('$60.00')).toHaveLength(2) // Summary and payer amount
       expect(screen.getByText('2 people')).toBeInTheDocument()
       expect(screen.getByText('Confirmed')).toBeInTheDocument()
     })
@@ -169,7 +189,7 @@ describe('ExpenseListItem', () => {
       render(<ExpenseListItem {...defaultProps} />)
 
       // The date should be formatted by our mocked function
-      expect(screen.getByText(new Date('2024-01-15').toLocaleDateString())).toBeInTheDocument()
+      expect(screen.getByText(new Date('2023-01-15').toLocaleDateString())).toBeInTheDocument()
     })
 
     it('should show collapsible trigger', () => {
@@ -189,7 +209,7 @@ describe('ExpenseListItem', () => {
     it('should display pending status correctly', () => {
       const pendingExpense = {
         ...mockExpense,
-        status: 'pending_confirmation',
+        status: 'pending_confirmation' as const,
       }
 
       render(<ExpenseListItem {...defaultProps} expense={pendingExpense} />)
@@ -200,7 +220,7 @@ describe('ExpenseListItem', () => {
     it('should display edited status correctly', () => {
       const editedExpense = {
         ...mockExpense,
-        status: 'edited',
+        status: 'edited' as const,
       }
 
       render(<ExpenseListItem {...defaultProps} expense={editedExpense} />)
@@ -213,10 +233,10 @@ describe('ExpenseListItem', () => {
     it('should display member names from profiles', () => {
       const expenseWithKnownMembers = {
         ...mockExpense,
-        payers: [{ user_id: 'user-1', amount: 120.5 }],
+        payers: [{ user_id: 'user-1', amount: 60.0 }],
         participants: [
-          { user_id: 'user-1', amount: 60.25 },
-          { user_id: 'user-2', amount: 60.25 },
+          { user_id: 'user-1', amount: 20.0 },
+          { user_id: 'user-2', amount: 20.0 },
         ],
       }
 
@@ -229,8 +249,8 @@ describe('ExpenseListItem', () => {
     it('should display placeholder names when provided', () => {
       const expenseWithPlaceholder = {
         ...mockExpense,
-        payers: [{ placeholder_name: 'Guest User', amount: 120.5 }],
-        participants: [{ placeholder_name: 'Guest User', amount: 120.5 }],
+        payers: [{ placeholder_name: 'Guest User', amount: 60.0 }],
+        participants: [{ placeholder_name: 'Guest User', amount: 60.0 }],
       }
 
       render(<ExpenseListItem {...defaultProps} expense={expenseWithPlaceholder} />)
@@ -315,7 +335,7 @@ describe('ExpenseListItem', () => {
       render(<ExpenseListItem {...defaultProps} />)
 
       // Items should be shown in expanded view
-      expect(screen.getByText('Main course')).toBeInTheDocument()
+      expect(screen.getByText('Pizza')).toBeInTheDocument()
       expect(screen.getByText('Drinks')).toBeInTheDocument()
     })
 
@@ -323,7 +343,7 @@ describe('ExpenseListItem', () => {
       render(<ExpenseListItem {...defaultProps} />)
 
       // AI confidence score should be visible in metadata
-      expect(screen.getByText('AI Confidence: 85%')).toBeInTheDocument()
+      expect(screen.getByText('AI Confidence: 95%')).toBeInTheDocument()
     })
 
     it('should show creation date in metadata', () => {
@@ -344,7 +364,7 @@ describe('ExpenseListItem', () => {
       render(<ExpenseListItem {...defaultProps} expense={expenseWithoutItems} />)
 
       // Should render without errors
-      expect(screen.getByText('Team dinner')).toBeInTheDocument()
+      expect(screen.getByText('Team Lunch')).toBeInTheDocument()
     })
 
     it('should handle expenses without confidence score', () => {
@@ -356,20 +376,20 @@ describe('ExpenseListItem', () => {
       render(<ExpenseListItem {...defaultProps} expense={expenseWithoutScore} />)
 
       // Should render without errors
-      expect(screen.getByText('Team dinner')).toBeInTheDocument()
+      expect(screen.getByText('Team Lunch')).toBeInTheDocument()
     })
 
     it('should handle unknown users gracefully', () => {
       const expenseWithUnknownUser = {
         ...mockExpense,
-        payers: [{ user_id: 'unknown-user', amount: 120.5 }],
-        participants: [{ user_id: 'unknown-user', amount: 120.5 }],
+        payers: [{ user_id: 'unknown-user', amount: 60.0 }],
+        participants: [{ user_id: 'unknown-user', amount: 60.0 }],
       }
 
       render(<ExpenseListItem {...defaultProps} expense={expenseWithUnknownUser} />)
 
       // Should render without errors, showing "Unknown User" or similar
-      expect(screen.getByText('Team dinner')).toBeInTheDocument()
+      expect(screen.getByText('Team Lunch')).toBeInTheDocument()
     })
   })
 
@@ -383,10 +403,10 @@ describe('ExpenseListItem', () => {
     it('should show equal split rationale for equal splits', () => {
       const equalSplitExpense = {
         ...mockExpense,
-        total_amount: 30,
+        total_amount: 30.0,
         participants: [
-          { user_id: 'user-1', amount: 15 },
-          { user_id: 'user-2', amount: 15 },
+          { user_id: 'user-1', amount: 15.0 },
+          { user_id: 'user-2', amount: 15.0 },
         ],
       }
 
@@ -398,10 +418,10 @@ describe('ExpenseListItem', () => {
     it('should show percentage rationale for percentage splits', () => {
       const percentageSplitExpense = {
         ...mockExpense,
-        total_amount: 100,
+        total_amount: 100.0,
         participants: [
-          { user_id: 'user-1', amount: 40, percentage: 40 },
-          { user_id: 'user-2', amount: 60, percentage: 60 },
+          { user_id: 'user-1', amount: 40.0, percentage: 40.0 },
+          { user_id: 'user-2', amount: 60.0, percentage: 60.0 },
         ],
       }
 
@@ -414,10 +434,10 @@ describe('ExpenseListItem', () => {
     it('should show custom amount rationale for unequal splits', () => {
       const customSplitExpense = {
         ...mockExpense,
-        total_amount: 100,
+        total_amount: 100.0,
         participants: [
-          { user_id: 'user-1', amount: 70 },
-          { user_id: 'user-2', amount: 30 },
+          { user_id: 'user-1', amount: 70.0 },
+          { user_id: 'user-2', amount: 30.0 },
         ],
       }
 
@@ -430,10 +450,10 @@ describe('ExpenseListItem', () => {
     it('should handle placeholder members in split rationale', () => {
       const expenseWithPlaceholder = {
         ...mockExpense,
-        total_amount: 60,
+        total_amount: 60.0,
         participants: [
-          { user_id: 'user-1', amount: 30 },
-          { placeholder_name: 'Guest User', amount: 30 },
+          { user_id: 'user-1', amount: 30.0 },
+          { placeholder_name: 'Guest User', amount: 30.0 },
         ],
       }
 
@@ -441,23 +461,23 @@ describe('ExpenseListItem', () => {
 
       expect(screen.getAllByText('Split equally among 2 people')).toHaveLength(2)
       // Should display both user and placeholder name - using getAllByText since names appear multiple times
-      expect(screen.getAllByText('John Smith').length).toBeGreaterThan(0)
+      expect(screen.getAllByText('Alice Johnson').length).toBeGreaterThan(0)
       expect(screen.getAllByText('Guest User').length).toBeGreaterThan(0)
     })
 
     it('should display amounts correctly in split rationale', () => {
       const testExpense = {
         ...mockExpense,
-        total_amount: 45.5,
+        total_amount: 45.0,
         participants: [
-          { user_id: 'user-1', amount: 22.75 },
-          { user_id: 'user-2', amount: 22.75 },
+          { user_id: 'user-1', amount: 22.5 },
+          { user_id: 'user-2', amount: 22.5 },
         ],
       }
 
       render(<ExpenseListItem {...defaultProps} expense={testExpense} />)
 
-      expect(screen.getAllByText('$22.75')).toHaveLength(4) // 2 in participants section + 2 in rationale section
+      expect(screen.getAllByText('$22.50')).toHaveLength(4) // 2 in participants section + 2 in rationale section
     })
   })
 })

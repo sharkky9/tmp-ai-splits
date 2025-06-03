@@ -116,7 +116,7 @@ export default function GroupBalances({ groupId }: GroupBalancesProps) {
     if (groupId) {
       fetchBalances()
     }
-  }, [groupId])
+  }, [groupId, fetchBalances])
 
   const getBalanceIcon = (balance: number) => {
     if (Math.abs(balance) < 0.01) {

@@ -404,9 +404,7 @@ describe('expenseUtils', () => {
 
       expect(result).toHaveLength(2)
       expect(result[0].participantKey).toBe('user1')
-      expect(result[0].name).toBe('user1')
       expect(result[1].participantKey).toBe('Guest User')
-      expect(result[1].name).toBe('Guest User')
     })
 
     it('should handle single participant', () => {

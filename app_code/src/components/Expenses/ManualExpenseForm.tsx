@@ -1,11 +1,10 @@
 'use client'
 
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useMemo } from 'react'
 import { CreateExpenseRequest, ExpenseParticipantInput, SplitMethod } from '../../types/database'
 import { useCreateExpense } from '../../hooks/useExpenses'
-import { ExpenseCategoryIcon } from './ExpenseCategoryIcon'
 import { formatCurrency } from '../../lib/expenseUtils'
-import { Calendar, DollarSign, Users, Calculator, AlertCircle, Check, X, Plus } from 'lucide-react'
+import { Calendar, DollarSign, Users, Calculator, AlertCircle, X, Plus } from 'lucide-react'
 
 interface GroupMember {
   id: string
@@ -102,8 +101,8 @@ export function ManualExpenseForm({
     currency: initialData?.currency || 'USD',
     date_of_expense: initialData?.date_of_expense || new Date().toISOString().split('T')[0],
     category: initialData?.category || '',
-    tags: (initialData as any)?.tags || [],
-    payer_id: (initialData as any)?.payer_id || '',
+    tags: (initialData as CreateExpenseRequest & { tags?: string[] })?.tags || [],
+    payer_id: (initialData as CreateExpenseRequest & { payer_id?: string })?.payer_id || '',
     split_method: (initialData?.split_method as SplitMethod) || 'equal',
     participants: [],
     custom_amounts: {},
@@ -138,7 +137,7 @@ export function ManualExpenseForm({
   }, [formData.custom_amounts, formData.custom_percentages])
 
   // Update form field
-  const updateField = (field: keyof FormData, value: any) => {
+  const updateField = (field: keyof FormData, value: string | string[] | SplitMethod) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
     // Clear related errors
     if (errors[field as keyof FormErrors]) {
@@ -291,17 +290,17 @@ export function ManualExpenseForm({
 
     // Add tags if they exist
     if (formData.tags.length > 0) {
-      ;(expenseRequest as any).tags = formData.tags
+      ;(expenseRequest as CreateExpenseRequest & { tags: string[] }).tags = formData.tags
     }
 
     // Use the hook to submit the expense directly to the backend
     mutate(expenseRequest, {
-      onSuccess: (data) => {
+      onSuccess: () => {
         // Call the onSubmit callback to notify parent component with original request
         onSubmit(expenseRequest)
       },
       onError: (error) => {
-        setErrors({ general: error.message })
+        setErrors({ general: (error as Error).message })
       },
     })
   }

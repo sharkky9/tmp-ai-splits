@@ -14,23 +14,23 @@ describe('balanceUtils', () => {
     {
       id: 'member-1',
       user_id: 'user-1',
-      placeholder_name: null,
+      placeholder_name: undefined,
       is_placeholder: false,
       profiles: { name: 'Alice Smith' },
     },
     {
       id: 'member-2',
       user_id: 'user-2',
-      placeholder_name: null,
+      placeholder_name: undefined,
       is_placeholder: false,
       profiles: { name: 'Bob Johnson' },
     },
     {
       id: 'member-3',
-      user_id: null,
+      user_id: undefined,
       placeholder_name: 'Charlie Wilson',
       is_placeholder: true,
-      profiles: null,
+      profiles: undefined,
     },
   ]
 
@@ -261,7 +261,7 @@ describe('balanceUtils', () => {
       expect(placeholderBalance).toBeDefined()
       expect(placeholderBalance!.name).toBe('Charlie Wilson')
       expect(placeholderBalance!.placeholder_name).toBe('Charlie Wilson')
-      expect(placeholderBalance!.user_id).toBeNull()
+      expect(placeholderBalance!.user_id).toBeUndefined()
 
       const userBalance = balances.find(
         (b) => b.is_placeholder === false && b.member_id === 'member-1'
@@ -297,7 +297,7 @@ describe('balanceUtils', () => {
       {
         member_id: 'member-1',
         user_id: 'user-1',
-        placeholder_name: null,
+        placeholder_name: undefined,
         is_placeholder: false,
         total_paid: 100,
         total_share: 80,
@@ -307,7 +307,7 @@ describe('balanceUtils', () => {
       {
         member_id: 'member-2',
         user_id: 'user-2',
-        placeholder_name: null,
+        placeholder_name: undefined,
         is_placeholder: false,
         total_paid: 50,
         total_share: 80,
@@ -316,7 +316,7 @@ describe('balanceUtils', () => {
       },
       {
         member_id: 'member-3',
-        user_id: null,
+        user_id: undefined,
         placeholder_name: 'Charlie',
         is_placeholder: true,
         total_paid: 0,
@@ -327,7 +327,7 @@ describe('balanceUtils', () => {
       {
         member_id: 'member-4',
         user_id: 'user-4',
-        placeholder_name: null,
+        placeholder_name: undefined,
         is_placeholder: false,
         total_paid: 150,
         total_share: 100,

@@ -1,19 +1,6 @@
 'use client'
 
-import React, { useState, useMemo } from 'react'
-import { Search, Filter, SortAsc, SortDesc, Plus, Calendar, DollarSign, Users } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
-import { formatCurrency } from '@/lib/utils/currency'
+import React from 'react'
 import type { Expense, GroupMemberWithProfile } from '@/types/database'
 import { ExpenseListItem } from './ExpenseListItem'
 import { useExpenses } from '../../hooks/useExpenses'
