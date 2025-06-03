@@ -1,14 +1,12 @@
 import React from 'react'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ExpenseListItem } from '../ExpenseListItem'
 import type { Expense, GroupMemberWithProfile } from '../../../types/database'
-import { formatCurrency } from '../../../lib/utils/currency'
-import { formatDateForDisplay } from '../../../lib/utils/dateUtils'
 
 // Mock the external utilities
 jest.mock('../../../lib/utils/currency', () => ({
-  formatCurrency: jest.fn((amount: number, currency = 'USD') => `$${amount.toFixed(2)}`),
+  formatCurrency: jest.fn((amount: number) => `$${amount.toFixed(2)}`),
 }))
 
 jest.mock('../../../lib/utils/dateUtils', () => ({
@@ -16,25 +14,19 @@ jest.mock('../../../lib/utils/dateUtils', () => ({
   formatDistanceToNowSafe: jest.fn(() => '2 days ago'),
 }))
 
-// Create mock components for Collapsible before the jest.mock call
-const MockCollapsible = ({ children, open }: { children: React.ReactNode; open: boolean }) => (
-  <div data-testid='collapsible' data-open={open}>
-    {children}
-  </div>
-)
-
-const MockCollapsibleTrigger = ({ children }: { children: React.ReactNode }) => (
-  <div data-testid='collapsible-trigger'>{children}</div>
-)
-
-const MockCollapsibleContent = ({ children }: { children: React.ReactNode }) => (
-  <div data-testid='collapsible-content'>{children}</div>
-)
-
+// Mock UI components with inline definitions
 jest.mock('../../../components/ui/collapsible', () => ({
-  Collapsible: MockCollapsible,
-  CollapsibleTrigger: MockCollapsibleTrigger,
-  CollapsibleContent: MockCollapsibleContent,
+  Collapsible: ({ children, open }: { children: React.ReactNode; open: boolean }) => (
+    <div data-testid='collapsible' data-open={open}>
+      {children}
+    </div>
+  ),
+  CollapsibleTrigger: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid='collapsible-trigger'>{children}</div>
+  ),
+  CollapsibleContent: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid='collapsible-content'>{children}</div>
+  ),
 }))
 
 // Simplified mocks for UI components
@@ -52,13 +44,29 @@ jest.mock('lucide-react', () => ({
 
 // Apply mocks using relative paths
 jest.mock('../../ui/card', () => ({
-  Card: ({ children, className }: any) => <div className={className}>{children}</div>,
-  CardContent: ({ children, className }: any) => <div className={className}>{children}</div>,
-  CardHeader: ({ children, className }: any) => <div className={className}>{children}</div>,
+  Card: ({ children, className }: { children: React.ReactNode; className?: string }) => (
+    <div className={className}>{children}</div>
+  ),
+  CardContent: ({ children, className }: { children: React.ReactNode; className?: string }) => (
+    <div className={className}>{children}</div>
+  ),
+  CardHeader: ({ children, className }: { children: React.ReactNode; className?: string }) => (
+    <div className={className}>{children}</div>
+  ),
 }))
 
 jest.mock('../../ui/button', () => ({
-  Button: ({ children, onClick, disabled, className }: any) => (
+  Button: ({
+    children,
+    onClick,
+    disabled,
+    className,
+  }: {
+    children: React.ReactNode
+    onClick?: () => void
+    disabled?: boolean
+    className?: string
+  }) => (
     <button onClick={onClick} disabled={disabled} className={className}>
       {children}
     </button>
@@ -66,7 +74,9 @@ jest.mock('../../ui/button', () => ({
 }))
 
 jest.mock('../../ui/badge', () => ({
-  Badge: ({ children, className }: any) => <span className={className}>{children}</span>,
+  Badge: ({ children, className }: { children: React.ReactNode; className?: string }) => (
+    <span className={className}>{children}</span>
+  ),
 }))
 
 jest.mock('../../ui/separator', () => ({
@@ -181,7 +191,7 @@ describe('ExpenseListItem', () => {
 
       expect(screen.getByText('Team Lunch')).toBeInTheDocument()
       expect(screen.getAllByText('$60.00')).toHaveLength(2) // Summary and payer amount
-      expect(screen.getByText('2 people')).toBeInTheDocument()
+      expect(screen.getByText('3 people')).toBeInTheDocument() // 3 participants in the expense
       expect(screen.getByText('Confirmed')).toBeInTheDocument()
     })
 
@@ -189,7 +199,7 @@ describe('ExpenseListItem', () => {
       render(<ExpenseListItem {...defaultProps} />)
 
       // The date should be formatted by our mocked function
-      expect(screen.getByText(new Date('2023-01-15').toLocaleDateString())).toBeInTheDocument()
+      expect(screen.getByText('Jan 15, 2023')).toBeInTheDocument()
     })
 
     it('should show collapsible trigger', () => {

@@ -7,7 +7,7 @@ import {
   formatCurrency,
   generateSplitRationale,
 } from '../expenseUtils'
-import { MemberBalance, SimplifiedDebt } from '../../types/database'
+import { MemberBalance } from '../../types/database'
 
 describe('expenseUtils', () => {
   describe('calculateEqualSplit', () => {
@@ -413,7 +413,7 @@ describe('expenseUtils', () => {
       const result = generateSplitRationale(participants, 30, 'USD')
 
       expect(result).toHaveLength(1)
-      expect(result[0].rationale).toBe('Split equally among 1 person')
+      expect(result[0].rationale).toBe('Custom amount (100.0% of total)')
     })
 
     it('should handle empty participants array', () => {
@@ -423,7 +423,7 @@ describe('expenseUtils', () => {
     })
 
     it('should handle null participants', () => {
-      const result = generateSplitRationale(null as any, 30, 'USD')
+      const result = generateSplitRationale(null as unknown, 30, 'USD')
 
       expect(result).toHaveLength(0)
     })

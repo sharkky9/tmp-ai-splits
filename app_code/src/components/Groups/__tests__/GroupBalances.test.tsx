@@ -9,6 +9,60 @@ jest.mock('@supabase/auth-helpers-nextjs', () => ({
   createClientComponentClient: jest.fn(),
 }))
 
+// Mock the formatCurrency function properly
+jest.mock('../../../lib/expenseUtils', () => ({
+  formatCurrency: jest.fn((amount: number) => `$${amount.toFixed(2)}`),
+  simplifyDebts: jest.fn(() => [
+    {
+      from_member_id: 'member-3',
+      from_name: 'Charlie Wilson',
+      to_member_id: 'member-2',
+      to_name: 'Bob Johnson',
+      amount: 20,
+    },
+  ]),
+}))
+
+// Mock the balance utilities
+jest.mock('../../../lib/balanceUtils', () => ({
+  formatBalance: jest.fn((amount: number) => {
+    if (amount > 0.01) return `Gets back $${amount.toFixed(2)}`
+    if (amount < -0.01) return `Owes $${Math.abs(amount).toFixed(2)}`
+    return 'Settled up'
+  }),
+  calculateGroupBalances: jest.fn(() =>
+    Promise.resolve([
+      {
+        member_id: 'member-1',
+        user_id: 'user-1',
+        name: 'Alice Smith',
+        total_paid: 30,
+        total_owed: 30,
+        net_balance: 0,
+        is_placeholder: false,
+      },
+      {
+        member_id: 'member-2',
+        user_id: 'user-2',
+        name: 'Bob Johnson',
+        total_paid: 60,
+        total_owed: 40,
+        net_balance: 20,
+        is_placeholder: false,
+      },
+      {
+        member_id: 'member-3',
+        user_id: undefined,
+        name: 'Charlie Wilson',
+        total_paid: 0,
+        total_owed: 20,
+        net_balance: -20,
+        is_placeholder: true,
+      },
+    ])
+  ),
+}))
+
 const mockGroupMembers = [
   {
     id: 'member-1',
@@ -59,7 +113,13 @@ const mockExpenseSplits = [
 
 describe('GroupBalances', () => {
   let queryClient: QueryClient
-  let mockSupabase: any
+  let mockSupabase: ReturnType<typeof createMockSupabaseClient>
+
+  function createMockSupabaseClient() {
+    return {
+      from: jest.fn(),
+    }
+  }
 
   beforeEach(() => {
     queryClient = new QueryClient({
@@ -69,9 +129,7 @@ describe('GroupBalances', () => {
       },
     })
 
-    mockSupabase = {
-      from: jest.fn(),
-    }
+    mockSupabase = createMockSupabaseClient()
     ;(createClientComponentClient as jest.Mock).mockReturnValue(mockSupabase)
   })
 
@@ -88,8 +146,8 @@ describe('GroupBalances', () => {
   }
 
   const setupSuccessfulMocks = () => {
-    // Mock group members query
-    const membersMock = {
+    // Create mock chain for group members
+    const membersMockChain = {
       select: jest.fn().mockReturnValue({
         eq: jest.fn().mockResolvedValue({
           data: mockGroupMembers,
@@ -98,8 +156,8 @@ describe('GroupBalances', () => {
       }),
     }
 
-    // Mock expenses query - needs to handle .eq('group_id').eq('status')
-    const expensesMock = {
+    // Create mock chain for expenses
+    const expensesMockChain = {
       select: jest.fn().mockReturnValue({
         eq: jest.fn().mockReturnValue({
           eq: jest.fn().mockResolvedValue({
@@ -110,8 +168,8 @@ describe('GroupBalances', () => {
       }),
     }
 
-    // Mock expense splits query
-    const splitsMock = {
+    // Create mock chain for expense splits
+    const splitsMockChain = {
       select: jest.fn().mockReturnValue({
         in: jest.fn().mockResolvedValue({
           data: mockExpenseSplits,
@@ -120,10 +178,19 @@ describe('GroupBalances', () => {
       }),
     }
 
-    mockSupabase.from
-      .mockReturnValueOnce(membersMock)
-      .mockReturnValueOnce(expensesMock)
-      .mockReturnValueOnce(splitsMock)
+    // Setup the from() method to return appropriate mocks for each table
+    mockSupabase.from.mockImplementation((table: string) => {
+      switch (table) {
+        case 'group_members':
+          return membersMockChain
+        case 'expenses':
+          return expensesMockChain
+        case 'expense_splits':
+          return splitsMockChain
+        default:
+          return membersMockChain
+      }
+    })
   }
 
   it('should render loading state initially', async () => {
@@ -180,8 +247,8 @@ describe('GroupBalances', () => {
   })
 
   it('should display empty state when no balances', async () => {
-    // Mock group members query returning empty array
-    const emptyMembersMock = {
+    // Create mock chain for empty group members
+    const emptyMembersMockChain = {
       select: jest.fn().mockReturnValue({
         eq: jest.fn().mockResolvedValue({
           data: [],
@@ -190,8 +257,8 @@ describe('GroupBalances', () => {
       }),
     }
 
-    // Mock expenses query
-    const emptyExpensesMock = {
+    // Create mock chain for empty expenses
+    const emptyExpensesMockChain = {
       select: jest.fn().mockReturnValue({
         eq: jest.fn().mockReturnValue({
           eq: jest.fn().mockResolvedValue({
@@ -202,13 +269,36 @@ describe('GroupBalances', () => {
       }),
     }
 
-    mockSupabase.from.mockReturnValueOnce(emptyMembersMock).mockReturnValueOnce(emptyExpensesMock)
+    // Create mock chain for empty splits
+    const emptySplitsMockChain = {
+      select: jest.fn().mockReturnValue({
+        in: jest.fn().mockResolvedValue({
+          data: [],
+          error: null,
+        }),
+      }),
+    }
+
+    // Setup the from() method to return empty mocks
+    mockSupabase.from.mockImplementation((table: string) => {
+      switch (table) {
+        case 'group_members':
+          return emptyMembersMockChain
+        case 'expenses':
+          return emptyExpensesMockChain
+        case 'expense_splits':
+          return emptySplitsMockChain
+        default:
+          return emptyMembersMockChain
+      }
+    })
 
     await act(async () => {
       renderComponent()
     })
 
     await waitFor(() => {
+      // Check for empty state message
       expect(screen.getByText('No balances to show')).toBeInTheDocument()
       expect(screen.getByText('Add some expenses to see who owes what')).toBeInTheDocument()
     })
