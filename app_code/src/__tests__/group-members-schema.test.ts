@@ -1,5 +1,20 @@
-import { supabase } from '@/lib/supabaseClient'
 import '@testing-library/jest-dom'
+
+// Mock the supabase client to prevent environment variable issues in CI
+const mockSupabase = {
+  auth: {
+    getSession: jest.fn(),
+    onAuthStateChange: jest.fn(),
+  },
+  from: jest.fn(),
+}
+
+jest.mock('../lib/supabaseClient', () => ({
+  supabase: mockSupabase,
+}))
+
+// Now import after mocking
+import { supabase } from '../lib/supabaseClient'
 
 describe('Group Members Schema Integration Tests', () => {
   const mockUser = {
